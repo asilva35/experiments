@@ -7,7 +7,6 @@ import {
     Environment,
     ContactShadows,
     PerspectiveCamera,
-    useTexture
 } from '@react-three/drei'
 import * as THREE from 'three'
 import { useControls, button } from 'leva'
@@ -118,10 +117,10 @@ export default function GlassExperience() {
             <Canvas
                 shadows
                 dpr={[1, 2]}
-                // gl={{ preserveDrawingBuffer: true }} // CLAVE PARA CAPTURAS DE PANTALLA
-                onCreated={({ gl }) => {
-                    // Opción alternativa: habilitar preserveDrawingBuffer para que toDataURL funcione siempre
-                }}
+            // gl={{ preserveDrawingBuffer: true }} // CLAVE PARA CAPTURAS DE PANTALLA
+            //</div>onCreated={({ gl }) => {
+            // Opción alternativa: habilitar preserveDrawingBuffer para que toDataURL funcione siempre
+            //}}
             >
                 <SceneController customUrl={modelUrl} />
             </Canvas>

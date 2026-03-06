@@ -1,6 +1,6 @@
 import { useRef, useMemo, useState, useEffect } from 'react'
-import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { OrbitControls, PerspectiveCamera, Stats, useGLTF, Environment, ContactShadows, Float } from '@react-three/drei'
+import { Canvas } from '@react-three/fiber'
+import { OrbitControls, PerspectiveCamera, Stats, Environment, Float } from '@react-three/drei'
 import * as THREE from 'three'
 import { gsap } from 'gsap'
 import { useGSAP } from '@gsap/react';
@@ -16,7 +16,7 @@ interface POIData {
     img: string;
 }
 
-function SceneContent({ customUrl, selectedPOI, setSelectedPOI, staticPois }: any) {
+function SceneContent({ customUrl, setSelectedPOI, staticPois }: any) {
     const [dynamicPois, setDynamicPois] = useState<POIData[]>([]);
     const allPois = useMemo(() => {
         const staticArray = Array.isArray(staticPois) ? staticPois : [];
@@ -191,7 +191,6 @@ export default function Metropolis() {
                 {/* Movemos la lógica que usa hooks aquí dentro */}
                 <SceneContent
                     customUrl={customModelUrl}
-                    selectedPOI={selectedPOI}
                     setSelectedPOI={setSelectedPOI}
                     pois={pois}
                 />
