@@ -4,6 +4,7 @@ import ShelfConfigurator from './pages/configurator/ShelfConfigurator'
 import Metropolis from './pages/city/Metropolis'
 import GlassExperience from './pages/glass/GlassExperience'
 import NutritionalCalculator from './pages/nutritional-calculator/NutritionalCalculator'
+import FaceConfigurator from './pages/glasses-tryon/FaceConfigurator'
 
 // Un componente simple para la página de inicio o selección
 const Home = () => (
@@ -25,6 +26,9 @@ const Home = () => (
       <Link to="/nutritional-calculator" className="text-slate-500 hover:text-slate-400 transition-colors flex items-center gap-2">
         <span className="opacity-50">/05</span> Nutritional Calculator
       </Link>
+      <Link to="/face-configurator" className="text-slate-500 hover:text-slate-400 transition-colors flex items-center gap-2">
+        <span className="opacity-50">/06</span> Face Configurator
+      </Link>
     </nav>
   </div>
 )
@@ -39,6 +43,7 @@ export default function App() {
         <Route path="/metropolis" element={<Metropolis />} />
         <Route path="/glass" element={<GlassExperience />} />
         <Route path="/nutritional-calculator" element={<NutritionalCalculator />} />
+        <Route path="/face-configurator" element={<FaceConfigurator />} />
       </Routes>
     </BrowserRouter>
   )
