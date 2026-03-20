@@ -241,45 +241,7 @@ function VertexHandle({ position, onDrag, visible }: any) {
 }
 
 // --- 4. ESCENA ---
-function PlannerScene({ viewMode, showDimensions }: any) {
-    const [selectedId, setSelectedId] = useState<string | null>(null);
-    const [vertices, setVertices] = useState([
-        { id: 0, x: -3, z: -2 }, { id: 1, x: 3, z: -2 },
-        { id: 2, x: 3, z: 2 }, { id: 3, x: -3, z: 2 },
-    ]);
-
-    const [connections, setConnections] = useState([
-        { id: 'w1', start: 0, end: 1 }, { id: 'w2', start: 1, end: 2 },
-        { id: 'w3', start: 2, end: 3 }, { id: 'w4', start: 3, end: 0 },
-    ]);
-
-    const updateVertex = (id: number, pos: THREE.Vector3) => {
-        setVertices(prev => prev.map(v => v.id === id ? { ...v, x: pos.x, z: pos.z } : v));
-    };
-
-    const moveWall = (wallId: string, mousePos: THREE.Vector3, wallNormal: THREE.Vector3) => {
-        setVertices(prev => {
-            const wall = connections.find(c => c.id === wallId);
-            if (!wall) return prev;
-
-            const v1 = prev.find(v => v.id === wall.start)!;
-            const v2 = prev.find(v => v.id === wall.end)!;
-            const midPoint = new THREE.Vector3((v1.x + v2.x) / 2, 0, (v1.z + v2.z) / 2);
-
-            const offset = mousePos.clone().sub(midPoint);
-            const distance = offset.dot(wallNormal);
-            const moveVector = wallNormal.clone().multiplyScalar(distance);
-
-            return prev.map(v => {
-                if (v.id === wall.start || v.id === wall.end) {
-                    return { ...v, x: v.x + moveVector.x, z: v.z + moveVector.z };
-                }
-                return v;
-            });
-        });
-    };
-
-
+function PlannerScene({ viewMode, showDimensions, vertices, setVertices, connections, setConnections, selectedId, setSelectedId, moveWall, updateVertex }: any) {
     const controlsRef = useRef<any>(null);
     const { camera } = useThree();
 
@@ -316,7 +278,7 @@ function PlannerScene({ viewMode, showDimensions }: any) {
             {/* Grid Interactivo */}
             <Grid infiniteGrid fadeDistance={50} sectionColor="#cbd5e1" cellColor="#f1f5f9" />
 
-            {connections.map((conn, idx) => {
+            {connections.map((conn: any, idx: number) => {
                 const v1 = vertices.find(v => v.id === conn.start)!;
                 const v2 = vertices.find(v => v.id === conn.end)!;
                 
@@ -362,10 +324,123 @@ function PlannerScene({ viewMode, showDimensions }: any) {
 export default function FloorPlanner() {
     const [viewMode, setViewMode] = useState<ViewMode>(VIEW_MODES.ZENITHAL);
     const [showDimensions, setShowDimensions] = useState(true);
+    const [modal, setModal] = useState<string | null>(null);
+
+    // Estado principal del Plano
+    const [selectedId, setSelectedId] = useState<string | null>(null);
+    const [vertices, setVertices] = useState([
+        { id: 0, x: -3, z: -2 }, { id: 1, x: 3, z: -2 },
+        { id: 2, x: 3, z: 2 }, { id: 3, x: -3, z: 2 },
+    ]);
+    const [connections, setConnections] = useState([
+        { id: 'w1', start: 0, end: 1 }, { id: 'w2', start: 1, end: 2 },
+        { id: 'w3', start: 2, end: 3 }, { id: 'w4', start: 3, end: 0 },
+    ]);
+
+    const updateVertex = (id: number, pos: THREE.Vector3) => {
+        setVertices(prev => prev.map(v => v.id === id ? { ...v, x: pos.x, z: pos.z } : v));
+    };
+
+    const moveWall = (wallId: string, mousePos: THREE.Vector3, wallNormal: THREE.Vector3) => {
+        setVertices(prev => {
+            const wall = connections.find(c => c.id === wallId);
+            if (!wall) return prev;
+            const v1 = prev.find(v => v.id === wall.start)!;
+            const v2 = prev.find(v => v.id === wall.end)!;
+            const midPoint = new THREE.Vector3((v1.x + v2.x) / 2, 0, (v1.z + v2.z) / 2);
+            const offset = mousePos.clone().sub(midPoint);
+            const distance = offset.dot(wallNormal);
+            const moveVector = wallNormal.clone().multiplyScalar(distance);
+            return prev.map(v => (v.id === wall.start || v.id === wall.end) ? { ...v, x: v.x + moveVector.x, z: v.z + moveVector.z } : v);
+        });
+    };
+
+    // --- LÓGICA DE SPLIT (CREAR ESCALÓN) ---
+    const handleSplit = () => {
+        if (!selectedId) return setModal("You must select a wall");
+        const wall = connections.find(c => c.id === selectedId)!;
+        const v1 = vertices.find(v => v.id === wall.start)!;
+        const v2 = vertices.find(v => v.id === wall.end)!;
+        const length = Math.sqrt(Math.pow(v2.x - v1.x, 2) + Math.pow(v2.z - v1.z, 2));
+
+        if (length < 1) return setModal("Wall must be at least 100 cm");
+
+        // Calcular normal para el escalón
+        const dx = v2.x - v1.x;
+        const dz = v2.z - v1.z;
+        const norm = new THREE.Vector2(-dz, dx).normalize();
+        
+        // Direcciones
+        const midX = (v1.x + v2.x) / 2;
+        const midZ = (v1.z + v2.z) / 2;
+        const stepSize = 0.3; // 30cm escalón
+
+        const newId1 = Math.max(...vertices.map(v => v.id)) + 1;
+        const newId2 = newId1 + 1;
+
+        const vA = { id: newId1, x: midX, z: midZ };
+        const vB = { id: newId2, x: midX + norm.x * stepSize, z: midZ + norm.y * stepSize };
+
+        setVertices(prev => [...prev.map(v => v.id === wall.end ? { ...v, x: v.x + norm.x * stepSize, z: v.z + norm.y * stepSize } : v), vA, vB]);
+        setConnections(prev => {
+            const index = prev.findIndex(c => c.id === selectedId);
+            const wallA = { id: `w_a_${Date.now()}`, start: wall.start, end: vA.id };
+            const wallB = { id: `w_b_${Date.now()}`, start: vA.id, end: vB.id };
+            const wallC = { id: `w_c_${Date.now()}`, start: vB.id, end: wall.end };
+            const newConns = [...prev];
+            newConns.splice(index, 1, wallA, wallB, wallC);
+            return newConns;
+        });
+        setSelectedId(null);
+    };
+
+    // --- LÓGICA DE MERGE ---
+    const handleMerge = () => {
+        if (!selectedId) return setModal("You must select a wall");
+        setConnections(prev => {
+            const wallIdx = prev.findIndex(c => c.id === selectedId);
+            const wall = prev[wallIdx];
+            // Verificar si es parte de un escalón (simplificado: busca vecinos creados por split)
+            if (!wall.id.includes('w_')) return prev; // Solo permite merge en lo que fue splitted
+
+            // Buscamos el grupo de 3 muros que forman el escalón
+            const prevW = prev[wallIdx - 1];
+            const nextW = prev[wallIdx + 1];
+
+            if (prevW && nextW && prevW.id.includes('w_') && nextW.id.includes('w_')) {
+               const newWall = { id: `wm_${Date.now()}`, start: prevW.start, end: nextW.end };
+               const newConns = [...prev];
+               newConns.splice(wallIdx - 1, 3, newWall);
+               // Resetear vértices (mover el corner original de vuelta) seria ideal aquí
+               return newConns;
+            }
+            return prev;
+        });
+        setSelectedId(null);
+    };
 
     return (
         <div className="w-full h-screen bg-slate-50 relative overflow-hidden font-sans">
-            {/* Panel de Control */}
+            {/* Modal de Error Premium */}
+            {modal && (
+                <div className="absolute inset-0 z-[100] flex items-center justify-center bg-zinc-900/40 backdrop-blur-sm">
+                    <div className="bg-white p-8 rounded-3xl shadow-2xl border border-zinc-100 max-w-xs w-full text-center">
+                        <div className="w-12 h-12 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <span className="text-xl font-bold">!</span>
+                        </div>
+                        <h3 className="text-zinc-900 font-black mb-2 uppercase tracking-tight">Attention</h3>
+                        <p className="text-zinc-500 text-sm mb-6 leading-relaxed">{modal}</p>
+                        <button 
+                            onClick={() => setModal(null)}
+                            className="w-full py-3 bg-zinc-900 text-white text-[10px] font-bold rounded-xl hover:bg-orange-600 transition-colors uppercase"
+                        >
+                            Got it
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Panel de Control (Izquierda) */}
             <div className="absolute top-8 left-8 z-10 p-6 bg-white/90 backdrop-blur-md border border-zinc-200 shadow-2xl rounded-3xl w-72">
                 <div className="flex items-center gap-3">
                     <div className="w-2 h-8 bg-orange-500 rounded-full" />
@@ -417,8 +492,8 @@ export default function FloorPlanner() {
 
                 <div className="grid grid-cols-2 gap-3">
                     {[
-                        { label: 'Split', action: () => console.log('Action: Split Wall') },
-                        { label: 'Merge', action: () => console.log('Action: Merge Walls') },
+                        { label: 'Split', action: handleSplit },
+                        { label: 'Merge', action: handleMerge },
                         { label: 'Add Door', action: () => console.log('Action: Add Door') },
                         { label: 'Add Window', action: () => console.log('Action: Add Window') },
                         { label: 'Lock', action: () => console.log('Action: Lock Room') },
@@ -445,7 +520,18 @@ export default function FloorPlanner() {
             </div>
 
             <Canvas shadows gl={{ antialias: true }}>
-                <PlannerScene viewMode={viewMode} showDimensions={showDimensions} />
+                <PlannerScene 
+                    viewMode={viewMode} 
+                    showDimensions={showDimensions} 
+                    vertices={vertices}
+                    setVertices={setVertices}
+                    connections={connections}
+                    setConnections={setConnections}
+                    selectedId={selectedId}
+                    setSelectedId={setSelectedId}
+                    updateVertex={updateVertex}
+                    moveWall={moveWall}
+                />
             </Canvas>
         </div>
     )
