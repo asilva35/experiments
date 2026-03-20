@@ -65,7 +65,7 @@ function FaceTrackerContainer({
     const { camera } = useThree();
 
     // Controles de calibración en tiempo real
-    const { xOffset, yOffset, zOffset, scaleAdjust, yawFactor, pitchFactor, smoothingFactor } = useControls('Lentes (Calibración)', {
+    const { xOffset, yOffset, zOffset, scaleAdjust, yawFactor, pitchFactor, smoothingFactor } = useControls('Glasses (Calibration)', {
         xOffset: { value: 0, min: -1.5, max: 1.5, step: 0.01 },
         yOffset: { value: 0, min: -1.5, max: 1.5, step: 0.01 },
         zOffset: { value: -2.5, min: -8, max: 0, step: 0.1 },
@@ -73,19 +73,19 @@ function FaceTrackerContainer({
         yawFactor: { value: 3.0, min: 0, max: 50, step: 1 },
         pitchFactor: { value: 1.5, min: 0, max: 5, step: 0.1 },
         smoothingFactor: { value: 0.30, min: 0.01, max: 1.0, step: 0.01 },
-    });
+    }, { collapsed: true });
 
-    const { debugOccluder, occluderZ, headWidth, headHeight, headDepth } = useControls('Oclusor (Cabeza)', {
+    const { debugOccluder, occluderZ, headWidth, headHeight, headDepth } = useControls('Occluder (Head)', {
         debugOccluder: false,
         occluderZ: { value: -2.0, min: -2, max: 2, step: 0.05 },
         headWidth: { value: 2.3, min: 0.1, max: 5, step: 0.1 },
         headHeight: { value: 1.3, min: 0.1, max: 5, step: 0.1 },
         headDepth: { value: 1.7, min: 0.1, max: 5, step: 0.1 },
-    });
+    }, { collapsed: true });
 
     const { debugPoints } = useControls('Debug', {
         debugPoints: false,
-    });
+    }, { collapsed: true });
 
     const LANDMARK_NAMES: Record<number, string> = {
         168: "Bridge (Anchor)",
