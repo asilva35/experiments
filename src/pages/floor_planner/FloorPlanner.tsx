@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react'
+import React, { useState, useMemo, useRef, useEffect } from 'react'
 import { Canvas, useThree } from '@react-three/fiber'
 import { OrbitControls, Grid, PerspectiveCamera, ContactShadows, Html, Line, Circle } from '@react-three/drei'
 import * as THREE from 'three'
@@ -124,7 +124,7 @@ function Wall({ wallData, vPrev, v1, v2, vNext, onDrag, viewMode, isSelected, on
             rotation: [-Math.PI / 2, 0, 0],         // Rotación fija para aplanar el Shape
             midPoint: [midX, 0.4, midZ],           // Para el indicador de número
             normal: norm,
-            outerNormal: miter1.bisector,
+            outerNormal: new THREE.Vector2(outNorm.x, outNorm.z), // Vector2 apuntando hacia afuera del room
             wallGeometry: geom
         };
     }, [vPrev, v1, v2, vNext, isSelected, allVertices]);
@@ -280,6 +280,25 @@ function PlannerScene({ viewMode, showDimensions }: any) {
     };
 
 
+    const controlsRef = useRef<any>(null);
+    const { camera } = useThree();
+
+    // Deseleccionar paredes al cambiar a 3D, resetear cámara al volver a 2D
+    useEffect(() => {
+        if (viewMode === VIEW_MODES.THREE_D) {
+            setSelectedId(null);
+        } else {
+            // Resetear cámara a vista cenital
+            camera.position.set(0, 20, 0);
+            camera.lookAt(0, 0, 0);
+            camera.updateProjectionMatrix();
+            if (controlsRef.current) {
+                controlsRef.current.target.set(0, 0, 0);
+                controlsRef.current.update();
+            }
+        }
+    }, [viewMode, camera]);
+
     return (
         <>
             <color attach="background" args={['#ffffff']} />
@@ -289,7 +308,7 @@ function PlannerScene({ viewMode, showDimensions }: any) {
                 fov={40}
             />
 
-            <OrbitControls makeDefault enabled={viewMode === VIEW_MODES.THREE_D} />
+            <OrbitControls ref={controlsRef} makeDefault enabled={viewMode === VIEW_MODES.THREE_D} />
 
             <ambientLight intensity={0.9} />
             <pointLight position={[5, 10, 5]} intensity={1.5} />
