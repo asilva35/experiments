@@ -394,28 +394,56 @@ export default function FloorPlanner() {
         setSelectedId(null);
     };
 
-    // --- LÓGICA DE MERGE ---
+    // --- LÓGICA DE MERGE (UNIFICAR Y NIVELAR) ---
     const handleMerge = () => {
         if (!selectedId) return setModal("You must select a wall");
-        setConnections(prev => {
-            const wallIdx = prev.findIndex(c => c.id === selectedId);
-            const wall = prev[wallIdx];
-            // Verificar si es parte de un escalón (simplificado: busca vecinos creados por split)
-            if (!wall.id.includes('w_')) return prev; // Solo permite merge en lo que fue splitted
+        
+        let targetConns = [...connections];
+        let targetVerts = [...vertices];
 
-            // Buscamos el grupo de 3 muros que forman el escalón
-            const prevW = prev[wallIdx - 1];
-            const nextW = prev[wallIdx + 1];
+        const wallIdx = targetConns.findIndex(c => c.id === selectedId);
+        const wall = targetConns[wallIdx];
 
-            if (prevW && nextW && prevW.id.includes('w_') && nextW.id.includes('w_')) {
-               const newWall = { id: `wm_${Date.now()}`, start: prevW.start, end: nextW.end };
-               const newConns = [...prev];
-               newConns.splice(wallIdx - 1, 3, newWall);
-               // Resetear vértices (mover el corner original de vuelta) seria ideal aquí
-               return newConns;
+        // Verificar si es un segmento transversal de un escalón (w_b_...)
+        if (!wall.id.includes('w_b_')) return setModal("Select the transversal segment of the step to merge");
+
+        const prevW = targetConns[wallIdx - 1];
+        const nextW = targetConns[wallIdx + 1];
+
+        if (prevW && nextW) {
+            const v1 = targetVerts.find(v => v.id === prevW.start)!;
+            const vA = targetVerts.find(v => v.id === wall.start)!; // Vértice 1 del escalón
+            const vB = targetVerts.find(v => v.id === wall.end)!;   // Vértice 2 del escalón
+            const v2 = targetVerts.find(v => v.id === nextW.end)!;
+
+            // Calcular centroide para nivelar a la pared más exterior
+            const cx = targetVerts.reduce((s, v) => s + v.x, 0) / targetVerts.length;
+            const cz = targetVerts.reduce((s, v) => s + v.z, 0) / targetVerts.length;
+            
+            const distPrev = Math.pow((v1.x + vA.x)/2 - cx, 2) + Math.pow((v1.z + vA.z)/2 - cz, 2);
+            const distNext = Math.pow((vB.x + v2.x)/2 - cx, 2) + Math.pow((vB.z + v2.z)/2 - cz, 2);
+
+            const offset = new THREE.Vector3(vB.x - vA.x, 0, vB.z - vA.z);
+
+            if (distNext > distPrev) {
+                // Nivelar pared anterior (v1) hacia la posición de la pared siguiente
+                targetVerts = targetVerts.map(v => (v.id === v1.id) ? { ...v, x: v.x + offset.x, z: v.z + offset.z } : v);
+            } else {
+                // Nivelar pared siguiente (v2) hacia la posición de la pared anterior
+                targetVerts = targetVerts.map(v => (v.id === v2.id) ? { ...v, x: v.x - offset.x, z: v.z - offset.z } : v);
             }
-            return prev;
-        });
+
+            // Crear el nuevo muro unificado
+            const newWall = { id: `wm_${Date.now()}`, start: v1.id, end: v2.id };
+            targetConns.splice(wallIdx - 1, 3, newWall);
+            
+            // Eliminar vértices huérfanos del escalón (vA y vB)
+            targetVerts = targetVerts.filter(v => v.id !== vA.id && v.id !== vB.id);
+
+            setVertices(targetVerts);
+            setConnections(targetConns);
+        }
+        
         setSelectedId(null);
     };
 
