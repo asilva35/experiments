@@ -405,6 +405,45 @@ export default function FloorPlanner() {
                 </div>
             </div>
 
+            {/* Panel de Operaciones (Derecha) */}
+            <div className="absolute top-8 right-8 z-10 p-6 bg-white/90 backdrop-blur-md border border-zinc-200 shadow-2xl rounded-3xl w-72">
+                <div className="flex items-center justify-end gap-3 mb-6">
+                    <div className="text-right">
+                        <h2 className="text-[10px] text-zinc-400 uppercase font-bold tracking-[0.2em] leading-none mb-1">Tools</h2>
+                        <p className="text-sm font-black text-zinc-900 uppercase tracking-tight">Operations</p>
+                    </div>
+                    <div className="w-1.5 h-6 bg-orange-500 rounded-full" />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                    {[
+                        { label: 'Split', action: () => console.log('Action: Split Wall') },
+                        { label: 'Merge', action: () => console.log('Action: Merge Walls') },
+                        { label: 'Add Door', action: () => console.log('Action: Add Door') },
+                        { label: 'Add Window', action: () => console.log('Action: Add Window') },
+                        { label: 'Lock', action: () => console.log('Action: Lock Room') },
+                        { label: 'Hide', action: () => console.log('Action: Hide Layer') },
+                    ].map((btn) => (
+                        <button
+                            key={btn.label}
+                            onClick={btn.action}
+                            className="group relative bg-white border border-zinc-200 pt-3 pb-2.5 px-2 rounded-xl hover:border-orange-200 hover:shadow-md transition-all active:scale-95"
+                        >
+                            <span className="text-[10px] font-bold text-zinc-600 uppercase group-hover:text-zinc-900 transition-colors">
+                                {btn.label}
+                            </span>
+                            {/* Línea naranja inferior tipo CAD */}
+                            <div className="absolute bottom-0 left-2 right-2 h-[2px] bg-orange-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <div className="absolute bottom-0 left-4 right-4 h-[2px] bg-orange-500/30 rounded-full block" />
+                        </button>
+                    ))}
+                </div>
+
+                <div className="mt-6 pt-4 border-t border-zinc-100 italic">
+                    <p className="text-[9px] text-zinc-400 text-center">Select a wall to enable advanced operations</p>
+                </div>
+            </div>
+
             <Canvas shadows gl={{ antialias: true }}>
                 <PlannerScene viewMode={viewMode} showDimensions={showDimensions} />
             </Canvas>
