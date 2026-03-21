@@ -11,20 +11,20 @@ type ViewMode = typeof VIEW_MODES[keyof typeof VIEW_MODES];
 const getMiterPoints = (vPrev: any, vCurr: any, vNext: any, thickness: number) => {
     const v1 = new THREE.Vector2(vCurr.x - vPrev.x, vCurr.z - vPrev.z).normalize();
     const v2 = new THREE.Vector2(vNext.x - vCurr.x, vNext.z - vCurr.z).normalize();
-    
+
     // Normales izquierdas de los dos segmentos
     const n1 = new THREE.Vector2(-v1.y, v1.x);
     const n2 = new THREE.Vector2(-v2.y, v2.x);
-    
+
     // Bisectriz (promedio de las normales)
     let bisector = new THREE.Vector2().addVectors(n1, n2).normalize();
-    
+
     // Manejo de paredes paralelas (180 grados)
     if (bisector.length() < 0.01) bisector = n1.clone();
-    
+
     // Longitud del miter: thickness / cos(theta)
     const length = (thickness / 2) / Math.max(0.1, bisector.dot(n1));
-    
+
     return {
         left: new THREE.Vector2(vCurr.x + bisector.x * length, vCurr.z + bisector.y * length),
         right: new THREE.Vector2(vCurr.x - bisector.x * length, vCurr.z - bisector.y * length),
@@ -240,8 +240,159 @@ function VertexHandle({ position, onDrag, visible }: any) {
     );
 }
 
-// --- 4. ESCENA ---
-function PlannerScene({ viewMode, showDimensions, vertices, setVertices, connections, setConnections, selectedId, setSelectedId, moveWall, updateVertex }: any) {
+// --- 4. PUERTA ---
+function Door({ doorData, wall, centroids, onDrag, viewMode, isSelected, onSelect }: any) {
+    const [hovered, setHovered] = useState(false);
+    const [isDragging, setIsDragging] = useState(false);
+    const { raycaster } = useThree();
+
+    const { position, rotation, inwardSign, width, wallNormal } = useMemo(() => {
+        const v1 = wall.v1;
+        const v2 = wall.v2;
+        const dx = v2.x - v1.x;
+        const dz = v2.z - v1.z;
+        const wallAngle = Math.atan2(dz, dx);
+
+        const x = v1.x + dx * doorData.positionRatio;
+        const z = v1.z + dz * doorData.positionRatio;
+
+        // Normal de la pared ((-dz, dx) girado 90 CCW)
+        const wallNorm = new THREE.Vector2(-dz, dx).normalize();
+
+        // Vector del centro del cuarto a la puerta para determinar interior
+        const doorPos = new THREE.Vector2(x, z);
+        const center = new THREE.Vector2(centroids.x, centroids.z);
+        const toCenter = new THREE.Vector2().subVectors(center, doorPos).normalize();
+
+        // Si dot > 0, wallNorm apunta hacia adentro
+        const sign = toCenter.dot(wallNorm) > 0 ? 1 : -1;
+
+        console.log("sign", sign);
+
+        return {
+            position: [x, 0, z],
+            rotation: [-Math.PI / 2, 0, wallAngle],
+            inwardSign: sign,
+            width: doorData.width || 0.9,
+            wallNormal: wallNorm
+        };
+    }, [wall, doorData, centroids]);
+
+    const is2D = viewMode === VIEW_MODES.ZENITHAL;
+
+    const handlePointerMove = (e: any) => {
+        if (!is2D || !e.target.hasPointerCapture(e.pointerId)) return;
+        const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+        const mousePos = new THREE.Vector3();
+        raycaster.ray.intersectPlane(plane, mousePos);
+
+        const v1 = new THREE.Vector2(wall.v1.x, wall.v1.z);
+        const v2 = new THREE.Vector2(wall.v2.x, wall.v2.z);
+        const mouse = new THREE.Vector2(mousePos.x, mousePos.z);
+
+        const line = new THREE.Vector2().subVectors(v2, v1);
+        const lenSq = line.lengthSq();
+        if (lenSq === 0) return;
+
+        const t = Math.max(0.05, Math.min(0.95, new THREE.Vector2().subVectors(mouse, v1).dot(line) / lenSq));
+        onDrag(doorData.id, t);
+    };
+
+    const handlePointerDown = (e: any) => {
+        if (!is2D) return;
+        e.stopPropagation();
+        setIsDragging(true);
+        e.target.setPointerCapture(e.pointerId);
+    };
+
+    const handlePointerUp = (e: any) => {
+        setIsDragging(false);
+        e.target.releasePointerCapture(e.pointerId);
+    };
+
+    const highlightColor = (hovered || isDragging) ? "#22c55e" : "#18181b";
+
+    return (
+        <group
+            position={position as any}
+            rotation={rotation as any}
+            onPointerOver={() => is2D && setHovered(true)}
+            onPointerOut={() => is2D && setHovered(false)}
+        >
+            {/* Hitbox e Indicador Visual de Selección (Aumentamos Y para estar sobre el muro) */}
+            <mesh
+                position={[0, 0, 3]} // Z local = Global -Y. Ponemos 3 para que esté alto en 2D (pero invisible)
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUp}
+            >
+                <planeGeometry args={[width * 1.5, 1]} />
+                <meshBasicMaterial
+                    color="#22c55e"
+                    transparent
+                    opacity={hovered ? 0.2 : 0}
+                />
+            </mesh>
+
+            {/* Borde sutil verde en hover / drag */}
+            {(hovered || isDragging) && is2D && (
+                <Line
+                    points={[
+                        new THREE.Vector3(-width / 2 - 0.1, -0.4, 3.1),
+                        new THREE.Vector3(width / 2 + 0.1, -0.4, 3.1),
+                        new THREE.Vector3(width / 2 + 0.1, 0.4, 3.1),
+                        new THREE.Vector3(-width / 2 - 0.1, 0.4, 3.1),
+                        new THREE.Vector3(-width / 2 - 0.1, -0.4, 3.1),
+                    ]}
+                    color="#22c55e"
+                    lineWidth={2}
+                />
+            )}
+
+            {/* Representación 3D del portal (Masa que atraviesa el muro) */}
+            <mesh position={[0, 0, 1.25]} rotation={[Math.PI / 2, 0, 0]}>
+                <boxGeometry args={[width, 2.501, 0.35]} />
+                <meshBasicMaterial
+                    color={highlightColor}
+                    transparent
+                    opacity={viewMode === VIEW_MODES.THREE_D ? 0.6 : 0}
+                />
+            </mesh>
+
+            {/* Representación CAD 2D */}
+            {is2D && (
+                <group scale={[1, inwardSign, 1]}>
+                    <mesh position={[0, 0, 0.1]}>
+                        <boxGeometry args={[width, 0.1, 0.1]} />
+                        <meshBasicMaterial color={highlightColor} />
+                    </mesh>
+
+                    {/* Hoja de la puerta */}
+                    <mesh position={[-width / 2, width / 2, 0.1]} rotation={[0, 0, Math.PI / 2]}>
+                        <boxGeometry args={[width, 0.05, 0.05]} />
+                        <meshBasicMaterial color={highlightColor} />
+                    </mesh>
+
+                    {/* Arco de apertura */}
+                    <Line
+                        points={Array.from({ length: 16 }, (_, i) => {
+                            const a = (i / 15) * Math.PI / 2;
+                            return new THREE.Vector3(-width / 2 + Math.cos(a) * width, Math.sin(a) * width, 0.1);
+                        })}
+                        color={highlightColor}
+                        lineWidth={2}
+                        dashed
+                        dashSize={0.1}
+                        gapSize={0.05}
+                    />
+                </group>
+            )}
+        </group>
+    );
+}
+
+// --- 5. ESCENA ---
+function PlannerScene({ viewMode, showDimensions, vertices, connections, selectedId, setSelectedId, moveWall, updateVertex, doors, setDoors }: any) {
     const controlsRef = useRef<any>(null);
     const { camera } = useThree();
 
@@ -279,14 +430,14 @@ function PlannerScene({ viewMode, showDimensions, vertices, setVertices, connect
             <Grid infiniteGrid fadeDistance={50} sectionColor="#cbd5e1" cellColor="#f1f5f9" />
 
             {connections.map((conn: any, idx: number) => {
-                const v1 = vertices.find(v => v.id === conn.start)!;
-                const v2 = vertices.find(v => v.id === conn.end)!;
-                
+                const v1 = vertices.find((v: any) => v.id === conn.start)!;
+                const v2 = vertices.find((v: any) => v.id === conn.end)!;
+
                 // Encontrar vecinos para la mitra
-                const prevConn = connections.find(c => c.end === conn.start)!;
-                const nextConn = connections.find(c => c.start === conn.end)!;
-                const vPrev = vertices.find(v => v.id === prevConn.start)!;
-                const vNext = vertices.find(v => v.id === nextConn.end)!;
+                const prevConn = connections.find((c: any) => c.end === conn.start)!;
+                const nextConn = connections.find((c: any) => c.start === conn.end)!;
+                const vPrev = vertices.find((v: any) => v.id === prevConn.start)!;
+                const vNext = vertices.find((v: any) => v.id === nextConn.end)!;
 
                 return (
                     <Wall
@@ -307,7 +458,40 @@ function PlannerScene({ viewMode, showDimensions, vertices, setVertices, connect
                 );
             })}
 
-            {vertices.map(v => (
+            {doors.map((door: any) => {
+                const wallConn = connections.find((c: any) => c.id === door.wallId);
+                if (!wallConn) return null;
+                const v1 = vertices.find((v: any) => v.id === wallConn.start)!;
+                const v2 = vertices.find((v: any) => v.id === wallConn.end)!;
+
+                // Necesitamos la info de la pared para posicionar la puerta
+                const prevConn = connections.find((c: any) => c.end === wallConn.start)!;
+                const nextConn = connections.find((c: any) => c.start === wallConn.end)!;
+                const vPrev = vertices.find((v: any) => v.id === prevConn.start)!;
+                const vNext = vertices.find((v: any) => v.id === nextConn.end)!;
+                const miter = getMiterPoints(vPrev, v1, v2, 0.25);
+
+                const wallData = { v1, v2, outerNormal: miter.bisector };
+
+                // Enviar centroide para orientación
+                const cx = vertices.reduce((s: any, v: any) => s + v.x, 0) / vertices.length;
+                const cz = vertices.reduce((s: any, v: any) => s + v.z, 0) / vertices.length;
+
+                return (
+                    <Door
+                        key={door.id}
+                        doorData={door}
+                        wall={wallData}
+                        centroids={{ x: cx, z: cz }}
+                        viewMode={viewMode}
+                        onDrag={(id: string, ratio: number) => {
+                            setDoors((prev: any) => prev.map((d: any) => d.id === id ? { ...d, positionRatio: ratio } : d));
+                        }}
+                    />
+                );
+            })}
+
+            {vertices.map((v: any) => (
                 <VertexHandle
                     key={v.id} position={v}
                     visible={viewMode === VIEW_MODES.ZENITHAL}
@@ -355,6 +539,35 @@ export default function FloorPlanner() {
         });
     };
 
+    // ESTADO DE PUERTAS
+    const [doors, setDoors] = useState<any[]>([]);
+    const [doorLibraryOpen, setDoorLibraryOpen] = useState(false);
+
+    // --- LÓGICA DE PUERTAS ---
+    const handleAddDoorRequest = () => {
+        if (!selectedId) return setModal("You must select a wall");
+        const wall = connections.find(c => c.id === selectedId)!;
+        const v1 = vertices.find(v => v.id === wall.start)!;
+        const v2 = vertices.find(v => v.id === wall.end)!;
+        const length = Math.sqrt(Math.pow(v2.x - v1.x, 2) + Math.pow(v2.z - v1.z, 2));
+
+        if (length < 1.5) return setModal("The wall need at least 150 cm");
+        setDoorLibraryOpen(true);
+    };
+
+    const addDoor = (type: string) => {
+        const newDoor = {
+            id: `door_${Date.now()}`,
+            wallId: selectedId,
+            positionRatio: 0.5,
+            type: type,
+            width: 0.9
+        };
+        setDoors(prev => [...prev, newDoor]);
+        setDoorLibraryOpen(false);
+        setSelectedId(null);
+    };
+
     // --- LÓGICA DE SPLIT (CREAR ESCALÓN) ---
     const handleSplit = () => {
         if (!selectedId) return setModal("You must select a wall");
@@ -369,7 +582,7 @@ export default function FloorPlanner() {
         const dx = v2.x - v1.x;
         const dz = v2.z - v1.z;
         const norm = new THREE.Vector2(-dz, dx).normalize();
-        
+
         // Direcciones
         const midX = (v1.x + v2.x) / 2;
         const midZ = (v1.z + v2.z) / 2;
@@ -397,7 +610,7 @@ export default function FloorPlanner() {
     // --- LÓGICA DE MERGE (UNIFICAR Y NIVELAR) ---
     const handleMerge = () => {
         if (!selectedId) return setModal("You must select a wall");
-        
+
         let targetConns = [...connections];
         let targetVerts = [...vertices];
 
@@ -419,9 +632,9 @@ export default function FloorPlanner() {
             // Calcular centroide para nivelar a la pared más exterior
             const cx = targetVerts.reduce((s, v) => s + v.x, 0) / targetVerts.length;
             const cz = targetVerts.reduce((s, v) => s + v.z, 0) / targetVerts.length;
-            
-            const distPrev = Math.pow((v1.x + vA.x)/2 - cx, 2) + Math.pow((v1.z + vA.z)/2 - cz, 2);
-            const distNext = Math.pow((vB.x + v2.x)/2 - cx, 2) + Math.pow((vB.z + v2.z)/2 - cz, 2);
+
+            const distPrev = Math.pow((v1.x + vA.x) / 2 - cx, 2) + Math.pow((v1.z + vA.z) / 2 - cz, 2);
+            const distNext = Math.pow((vB.x + v2.x) / 2 - cx, 2) + Math.pow((vB.z + v2.z) / 2 - cz, 2);
 
             const offset = new THREE.Vector3(vB.x - vA.x, 0, vB.z - vA.z);
 
@@ -436,19 +649,56 @@ export default function FloorPlanner() {
             // Crear el nuevo muro unificado
             const newWall = { id: `wm_${Date.now()}`, start: v1.id, end: v2.id };
             targetConns.splice(wallIdx - 1, 3, newWall);
-            
+
             // Eliminar vértices huérfanos del escalón (vA y vB)
             targetVerts = targetVerts.filter(v => v.id !== vA.id && v.id !== vB.id);
 
             setVertices(targetVerts);
             setConnections(targetConns);
         }
-        
+
         setSelectedId(null);
     };
 
     return (
         <div className="w-full h-screen bg-slate-50 relative overflow-hidden font-sans">
+            {/* Modal de Biblioteca de Puertas */}
+            {doorLibraryOpen && (
+                <div className="absolute inset-0 z-[110] flex items-center justify-center bg-zinc-900/60 backdrop-blur-md">
+                    <div className="bg-white rounded-[40px] shadow-2xl border border-zinc-100 max-w-2xl w-full p-10 relative overflow-hidden">
+                        <button onClick={() => setDoorLibraryOpen(false)} className="absolute top-6 right-6 text-zinc-400 hover:text-black">
+                            ✕
+                        </button>
+                        <div className="mb-8">
+                            <h2 className="text-2xl font-black text-zinc-900 uppercase tracking-tighter italic">Door Library</h2>
+                            <p className="text-zinc-400 text-xs font-bold uppercase tracking-widest mt-1">Select a style to insert</p>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-8">
+                            {[
+                                { id: 'classic', name: 'Classic Wood', icon: '🚪' },
+                                { id: 'glass', name: 'Modern Glass', icon: '🪟' },
+                                { id: 'frame', name: 'Simple Archway', icon: '⬜' }
+                            ].map(style => (
+                                <button
+                                    key={style.id}
+                                    onClick={() => addDoor(style.id)}
+                                    className="group flex flex-col items-center bg-zinc-50 border-2 border-transparent hover:border-orange-500 hover:bg-white p-8 rounded-[32px] transition-all"
+                                >
+                                    <div className="w-24 h-32 bg-white border border-zinc-200 rounded-xl mb-4 shadow-sm flex items-center justify-center text-4xl group-hover:shadow-xl group-hover:-translate-y-2 transition-all overflow-hidden relative">
+                                        {/* Representación visual abstracta de la puerta */}
+                                        <div className="absolute inset-2 border-2 border-zinc-100 rounded-lg" />
+                                        <div className="absolute top-1/2 right-2 w-2 h-2 bg-zinc-200 rounded-full" />
+                                        {style.icon}
+                                    </div>
+                                    <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest group-hover:text-black">{style.name}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Modal de Error Premium */}
             {modal && (
                 <div className="absolute inset-0 z-[100] flex items-center justify-center bg-zinc-900/40 backdrop-blur-sm">
@@ -458,7 +708,7 @@ export default function FloorPlanner() {
                         </div>
                         <h3 className="text-zinc-900 font-black mb-2 uppercase tracking-tight">Attention</h3>
                         <p className="text-zinc-500 text-sm mb-6 leading-relaxed">{modal}</p>
-                        <button 
+                        <button
                             onClick={() => setModal(null)}
                             className="w-full py-3 bg-zinc-900 text-white text-[10px] font-bold rounded-xl hover:bg-orange-600 transition-colors uppercase"
                         >
@@ -522,7 +772,7 @@ export default function FloorPlanner() {
                     {[
                         { label: 'Split', action: handleSplit },
                         { label: 'Merge', action: handleMerge },
-                        { label: 'Add Door', action: () => console.log('Action: Add Door') },
+                        { label: 'Add Door', action: handleAddDoorRequest },
                         { label: 'Add Window', action: () => console.log('Action: Add Window') },
                         { label: 'Lock', action: () => console.log('Action: Lock Room') },
                         { label: 'Hide', action: () => console.log('Action: Hide Layer') },
@@ -548,9 +798,9 @@ export default function FloorPlanner() {
             </div>
 
             <Canvas shadows gl={{ antialias: true }}>
-                <PlannerScene 
-                    viewMode={viewMode} 
-                    showDimensions={showDimensions} 
+                <PlannerScene
+                    viewMode={viewMode}
+                    showDimensions={showDimensions}
                     vertices={vertices}
                     setVertices={setVertices}
                     connections={connections}
@@ -559,6 +809,8 @@ export default function FloorPlanner() {
                     setSelectedId={setSelectedId}
                     updateVertex={updateVertex}
                     moveWall={moveWall}
+                    doors={doors}
+                    setDoors={setDoors}
                 />
             </Canvas>
         </div>
