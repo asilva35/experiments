@@ -241,12 +241,12 @@ function VertexHandle({ position, onDrag, visible }: any) {
 }
 
 // --- 4. PUERTA ---
-function Door({ doorData, wall, centroids, onDrag, viewMode, isSelected, onSelect }: any) {
+function Door({ doorData, wall, centroids, onDrag, onUpdate, viewMode, isSelected, onSelect }: any) {
     const [hovered, setHovered] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
     const { raycaster } = useThree();
 
-    const { position, rotation, inwardSign, width, wallNormal } = useMemo(() => {
+    const { position, rotation, inwardSign, width } = useMemo(() => {
         const v1 = wall.v1;
         const v2 = wall.v2;
         const dx = v2.x - v1.x;
@@ -264,17 +264,18 @@ function Door({ doorData, wall, centroids, onDrag, viewMode, isSelected, onSelec
         const center = new THREE.Vector2(centroids.x, centroids.z);
         const toCenter = new THREE.Vector2().subVectors(center, doorPos).normalize();
 
-        // Si dot > 0, wallNorm apunta hacia adentro
-        const sign = toCenter.dot(wallNorm) > 0 ? 1 : -1;
+        // Calculamos la orientación base hacia el centro
+        const baseSign = toCenter.dot(wallNorm) > 0 ? 1 : -1;
 
-        console.log("sign", sign);
+        // Aplicamos el flip manual (si doorData.side es -1, invertimos el cálculo)
+        const manualSide = doorData.side || 1;
+        const finalSign = baseSign * manualSide;
 
         return {
             position: [x, 0, z],
             rotation: [-Math.PI / 2, 0, wallAngle],
-            inwardSign: sign,
+            inwardSign: finalSign,
             width: doorData.width || 0.9,
-            wallNormal: wallNorm
         };
     }, [wall, doorData, centroids]);
 
@@ -310,6 +311,13 @@ function Door({ doorData, wall, centroids, onDrag, viewMode, isSelected, onSelec
         e.target.releasePointerCapture(e.pointerId);
     };
 
+    const handleDoubleClick = (e: any) => {
+        e.stopPropagation();
+        if (onUpdate) {
+            onUpdate(doorData.id, { side: (doorData.side || 1) * -1 });
+        }
+    };
+
     const highlightColor = (hovered || isDragging) ? "#22c55e" : "#18181b";
 
     return (
@@ -318,6 +326,7 @@ function Door({ doorData, wall, centroids, onDrag, viewMode, isSelected, onSelec
             rotation={rotation as any}
             onPointerOver={() => is2D && setHovered(true)}
             onPointerOut={() => is2D && setHovered(false)}
+            onDoubleClick={handleDoubleClick}
         >
             {/* Hitbox e Indicador Visual de Selección (Aumentamos Y para estar sobre el muro) */}
             <mesh
@@ -361,23 +370,31 @@ function Door({ doorData, wall, centroids, onDrag, viewMode, isSelected, onSelec
 
             {/* Representación CAD 2D */}
             {is2D && (
-                <group scale={[1, inwardSign, 1]}>
+                <group>
+                    {/* Marco/Umbral de la puerta */}
                     <mesh position={[0, 0, 0.1]}>
                         <boxGeometry args={[width, 0.1, 0.1]} />
                         <meshBasicMaterial color={highlightColor} />
                     </mesh>
 
-                    {/* Hoja de la puerta */}
-                    <mesh position={[-width / 2, width / 2, 0.1]} rotation={[0, 0, Math.PI / 2]}>
+                    {/* Hoja de la puerta (Multiplicamos la posición Y por inwardSign) */}
+                    <mesh
+                        position={[-width / 2, (width / 2) * inwardSign, 0.1]}
+                        rotation={[0, 0, (Math.PI / 2) * inwardSign]}
+                    >
                         <boxGeometry args={[width, 0.05, 0.05]} />
                         <meshBasicMaterial color={highlightColor} />
                     </mesh>
 
-                    {/* Arco de apertura */}
+                    {/* Arco de apertura (Multiplicamos la coordenada Y de los puntos por inwardSign) */}
                     <Line
                         points={Array.from({ length: 16 }, (_, i) => {
                             const a = (i / 15) * Math.PI / 2;
-                            return new THREE.Vector3(-width / 2 + Math.cos(a) * width, Math.sin(a) * width, 0.1);
+                            return new THREE.Vector3(
+                                -width / 2 + Math.cos(a) * width,
+                                Math.sin(a) * width * inwardSign, // <-- Aplicamos el signo aquí
+                                0.1
+                            );
                         })}
                         color={highlightColor}
                         lineWidth={2}
@@ -487,6 +504,9 @@ function PlannerScene({ viewMode, showDimensions, vertices, connections, selecte
                         onDrag={(id: string, ratio: number) => {
                             setDoors((prev: any) => prev.map((d: any) => d.id === id ? { ...d, positionRatio: ratio } : d));
                         }}
+                        onUpdate={(id: string, updates: any) => {
+                            setDoors((prev: any) => prev.map((d: any) => d.id === id ? { ...d, ...updates } : d));
+                        }}
                     />
                 );
             })}
@@ -560,6 +580,7 @@ export default function FloorPlanner() {
             id: `door_${Date.now()}`,
             wallId: selectedId,
             positionRatio: 0.5,
+            side: 1,
             type: type,
             width: 0.9
         };
