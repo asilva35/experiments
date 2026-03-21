@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import { Canvas, useThree } from '@react-three/fiber'
 import { OrbitControls, Grid, PerspectiveCamera, ContactShadows, Html, Line, Circle } from '@react-three/drei'
 import * as THREE from 'three'
@@ -85,8 +85,8 @@ function Wall({ wallData, vPrev, v1, v2, vNext, onDrag, viewMode, isSelected, on
     const { position, rotation, midPoint, normal, outerNormal, wallGeometry } = useMemo(() => {
         const dx = v2.x - v1.x;
         const dz = v2.z - v1.z;
-        const len = Math.sqrt(dx * dx + dz * dz);
-        const angle = Math.atan2(dz, dx);
+        //const len = Math.sqrt(dx * dx + dz * dz);
+        //const angle = Math.atan2(dz, dx);
         const norm = new THREE.Vector3(-dz, 0, dx).normalize();
 
         // Calcular centroide para orientación
@@ -742,7 +742,7 @@ function PlannerScene({ viewMode, showDimensions, vertices, connections, selecte
 
                 // Necesitamos la info de la pared para posicionar la puerta
                 const prevConn = connections.find((c: any) => c.end === wallConn.start)!;
-                const nextConn = connections.find((c: any) => c.start === wallConn.end)!;
+                //const nextConn = connections.find((c: any) => c.start === wallConn.end)!;
                 const vPrev = vertices.find((v: any) => v.id === prevConn.start)!;
                 const miter = getMiterPoints(vPrev, v1, v2, 0.25);
 
@@ -922,7 +922,7 @@ export default function FloorPlanner() {
         // Calcular centro
         const cx = vertices.reduce((s, v) => s + v.x, 0) / vertices.length;
         const cz = vertices.reduce((s, v) => s + v.z, 0) / vertices.length;
-        
+
         const newFixture = {
             id: `${type}_${Date.now()}`,
             type: type,
@@ -1093,16 +1093,16 @@ export default function FloorPlanner() {
                 </div>
 
                 <div className="mt-6 space-y-4">
-                    <div className="flex bg-zinc-100 p-1 rounded-xl">
+                    <div className="flex bg-zinc-100 p-1 rounded-xl gap-2">
                         <button
                             onClick={() => setViewMode(VIEW_MODES.ZENITHAL)}
-                            className={`flex-1 py-2.5 text-[10px] font-bold rounded-lg transition-all ${viewMode === VIEW_MODES.ZENITHAL ? 'bg-white shadow-sm text-black' : 'text-zinc-500 hover:text-zinc-700'}`}
+                            className={`flex-1 py-2.5 text-[10px] font-bold rounded-lg transition-all ${viewMode === VIEW_MODES.ZENITHAL ? 'bg-white shadow-sm text-orange-500' : 'text-zinc-500 hover:text-zinc-700'}`}
                         >
                             2D BLUEPRINT
                         </button>
                         <button
                             onClick={() => setViewMode(VIEW_MODES.THREE_D)}
-                            className={`flex-1 py-2.5 text-[10px] font-bold rounded-lg transition-all ${viewMode === VIEW_MODES.THREE_D ? 'bg-white shadow-sm text-black' : 'text-zinc-500 hover:text-zinc-700'}`}
+                            className={`flex-1 py-2.5 text-[10px] font-bold rounded-lg transition-all ${viewMode === VIEW_MODES.THREE_D ? 'bg-white shadow-sm text-orange-500' : 'text-zinc-500 hover:text-zinc-700'}`}
                         >
                             3D PREVIEW
                         </button>
@@ -1146,9 +1146,9 @@ export default function FloorPlanner() {
                         <button
                             key={btn.label}
                             onClick={btn.action}
-                            className="group relative bg-white border border-zinc-200 pt-3 pb-2.5 px-2 rounded-xl hover:border-orange-200 hover:shadow-md transition-all active:scale-95"
+                            className="group relative bg-white border border-zinc-200 pt-3 pb-2.5 px-2 rounded-xl hover:text-orange-500 hover:border-orange-200 hover:shadow-md transition-all active:scale-95"
                         >
-                            <span className="text-[10px] font-bold text-zinc-600 uppercase group-hover:text-zinc-900 transition-colors">
+                            <span className="text-[10px] font-bold text-zinc-600 uppercase group-hover:text-orange-500 transition-colors">
                                 {btn.label}
                             </span>
                             {/* Línea naranja inferior tipo CAD */}
