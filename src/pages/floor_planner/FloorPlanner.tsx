@@ -135,11 +135,11 @@ function Wall({ wallData, vPrev, v1, v2, vNext, onDrag, viewMode, isSelected, on
         if (!is2D || e.button !== 0) return;
         e.stopPropagation();
         onSelect(wallData.id);
-        e.target.setPointerCapture(e.pointerId);
+        (e.target as Element).setPointerCapture(e.pointerId);
     };
 
     const handlePointerMove = (e: any) => {
-        if (!is2D || !e.target.hasPointerCapture(e.pointerId)) return;
+        if (!is2D || !(e.target as Element).hasPointerCapture(e.pointerId)) return;
         const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
         const currentMousePos = new THREE.Vector3();
         raycaster.ray.intersectPlane(plane, currentMousePos);
@@ -147,7 +147,7 @@ function Wall({ wallData, vPrev, v1, v2, vNext, onDrag, viewMode, isSelected, on
     };
 
     const handlePointerUp = (e: any) => {
-        e.target.releasePointerCapture(e.pointerId);
+        (e.target as Element).releasePointerCapture(e.pointerId);
     };
 
     const wallColor = isSelected ? "#ef4444" : (hovered ? "#fecaca" : "#ffffff");
@@ -213,11 +213,11 @@ function VertexHandle({ position, onDrag, visible }: any) {
     const handlePointerDown = (e: any) => {
         if (!visible) return;
         e.stopPropagation();
-        e.target.setPointerCapture(e.pointerId);
+        (e.target as Element).setPointerCapture(e.pointerId);
     };
 
     const handlePointerMove = (e: any) => {
-        if (!visible || !e.target.hasPointerCapture(e.pointerId)) return;
+        if (!visible || !(e.target as Element).hasPointerCapture(e.pointerId)) return;
         const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
         const target = new THREE.Vector3();
         raycaster.ray.intersectPlane(plane, target);
@@ -232,7 +232,7 @@ function VertexHandle({ position, onDrag, visible }: any) {
             position={[position.x, 0.2, position.z]}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
-            onPointerUp={(e: any) => e.target.releasePointerCapture(e.pointerId)}
+            onPointerUp={(e: any) => (e.target as Element).releasePointerCapture(e.pointerId)}
         >
             <circleGeometry args={[0.3, 32]} />
             <meshBasicMaterial color="#18181b" />
@@ -241,7 +241,7 @@ function VertexHandle({ position, onDrag, visible }: any) {
 }
 
 // --- 4. PUERTA ---
-function Door({ doorData, wall, centroids, onDrag, onUpdate, viewMode, isSelected, onSelect }: any) {
+function Door({ doorData, wall, centroids, onDrag, onUpdate, viewMode }: any) {
     const [hovered, setHovered] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
     const { raycaster } = useThree();
@@ -408,8 +408,267 @@ function Door({ doorData, wall, centroids, onDrag, onUpdate, viewMode, isSelecte
     );
 }
 
-// --- 5. ESCENA ---
-function PlannerScene({ viewMode, showDimensions, vertices, connections, selectedId, setSelectedId, moveWall, updateVertex, doors, setDoors }: any) {
+// --- 5. VENTANA ---
+function Window({ windowData, wall, onDrag, viewMode }: any) {
+    const [hovered, setHovered] = useState(false);
+    const [isDragging, setIsDragging] = useState(false);
+    const { raycaster } = useThree();
+
+    const { position, rotation, width, height } = useMemo(() => {
+        const v1 = wall.v1;
+        const v2 = wall.v2;
+        const dx = v2.x - v1.x;
+        const dz = v2.z - v1.z;
+        const wallAngle = Math.atan2(dz, dx);
+
+        const x = v1.x + dx * windowData.positionRatio;
+        const z = v1.z + dz * windowData.positionRatio;
+
+        return {
+            position: [x, 1.2, z], // Altura media para la ventana
+            rotation: [-Math.PI / 2, 0, wallAngle],
+            width: 0.6, // 60cm de ancho
+            height: 0.4 // 40cm de alto
+        };
+    }, [wall, windowData]);
+
+    const is2D = viewMode === VIEW_MODES.ZENITHAL;
+
+    const handlePointerMove = (e: any) => {
+        if (!is2D || !e.target.hasPointerCapture(e.pointerId)) return;
+        const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+        const mousePos = new THREE.Vector3();
+        raycaster.ray.intersectPlane(plane, mousePos);
+
+        const v1 = new THREE.Vector2(wall.v1.x, wall.v1.z);
+        const v2 = new THREE.Vector2(wall.v2.x, wall.v2.z);
+        const mouse = new THREE.Vector2(mousePos.x, mousePos.z);
+
+        const line = new THREE.Vector2().subVectors(v2, v1);
+        const lenSq = line.lengthSq();
+        if (lenSq === 0) return;
+
+        const t = Math.max(0.05, Math.min(0.95, new THREE.Vector2().subVectors(mouse, v1).dot(line) / lenSq));
+        onDrag(windowData.id, t);
+    };
+
+    const handlePointerDown = (e: any) => {
+        if (!is2D) return;
+        e.stopPropagation();
+        setIsDragging(true);
+        e.target.setPointerCapture(e.pointerId);
+    };
+
+    const handlePointerUp = (e: any) => {
+        setIsDragging(false);
+        e.target.releasePointerCapture(e.pointerId);
+    };
+
+    const highlightColor = (hovered || isDragging) ? "#3b82f6" : "#18181b";
+
+    return (
+        <group
+            position={position as any}
+            rotation={rotation as any}
+            onPointerOver={() => is2D && setHovered(true)}
+            onPointerOut={() => is2D && setHovered(false)}
+        >
+            {/* Hitbox para arrastre */}
+            {is2D && (
+                <mesh
+                    position={[0, 0, 3]}
+                    onPointerDown={handlePointerDown}
+                    onPointerMove={handlePointerMove}
+                    onPointerUp={handlePointerUp}
+                >
+                    <planeGeometry args={[width * 1.5, 1]} />
+                    <meshBasicMaterial color="#3b82f6" transparent opacity={hovered ? 0.2 : 0} />
+                </mesh>
+            )}
+
+            {/* Representación 3D (Caja de cristal que atraviesa el muro) */}
+            <mesh position={[0, 0, 0]} rotation={[Math.PI / 2, 0, 0]}>
+                <boxGeometry args={[width, height, 0.4]} />
+                <meshBasicMaterial
+                    color="#93c5fd"
+                    transparent
+                    opacity={viewMode === VIEW_MODES.THREE_D ? 0.6 : 0}
+                />
+            </mesh>
+
+            {/* Representación CAD 2D (Rectángulo sobre el muro) */}
+            {is2D && (
+                <group position={[0, 0, 2.0]}> {/* Elevado por encima del muro (1.2 + 2.0 = 3.2m > 2.5m) */}
+                    {/* Recuadro de la ventana */}
+                    <mesh>
+                        <boxGeometry args={[width, 0.35, 0.05]} />
+                        <meshBasicMaterial color={highlightColor} />
+                    </mesh>
+
+                    {/* Cristalera blanca interior */}
+                    <mesh position={[0, 0, 0.01]}>
+                        <boxGeometry args={[width - 0.05, 0.1, 0.06]} />
+                        <meshBasicMaterial color="#e0f2fe" />
+                    </mesh>
+
+                    {/* Bordes negros decorativos */}
+                    <Line
+                        points={[
+                            new THREE.Vector3(-width / 2, -0.175, 0.05),
+                            new THREE.Vector3(width / 2, -0.175, 0.05),
+                            new THREE.Vector3(width / 2, 0.175, 0.05),
+                            new THREE.Vector3(-width / 2, 0.175, 0.05),
+                            new THREE.Vector3(-width / 2, -0.175, 0.05),
+                        ]}
+                        color="#000000"
+                        lineWidth={1}
+                    />
+                </group>
+            )}
+        </group>
+    );
+}
+
+// --- 7. MUEBLE / FIXTURE ---
+function Fixture({ data, onDrag, viewMode }: any) {
+    const [hovered, setHovered] = useState(false);
+    const { raycaster } = useThree();
+    const is2D = viewMode === VIEW_MODES.ZENITHAL;
+
+    const handlePointerMove = (e: any) => {
+        if (!is2D || !e.target.hasPointerCapture(e.pointerId)) return;
+        const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+        const mousePos = new THREE.Vector3();
+        raycaster.ray.intersectPlane(plane, mousePos);
+        onDrag(data.id, mousePos);
+    };
+
+    const render3D = () => {
+        switch (data.type) {
+            case 'washbasin':
+                return (
+                    <group>
+                        <mesh position={[0, 0.85, 0]}>
+                            <boxGeometry args={[0.5, 0.15, 0.4]} />
+                            <meshStandardMaterial color="#ffffff" />
+                        </mesh>
+                        <mesh position={[0, 1.0, -0.15]}>
+                            <cylinderGeometry args={[0.02, 0.02, 0.1]} />
+                            <meshStandardMaterial color="#94a3b8" metalness={0.8} roughness={0.2} />
+                        </mesh>
+                    </group>
+                );
+            case 'toilet':
+                return (
+                    <group>
+                        <mesh position={[0, 0.4, 0]}>
+                            <cylinderGeometry args={[0.2, 0.15, 0.4, 16]} />
+                            <meshStandardMaterial color="#ffffff" />
+                        </mesh>
+                        <mesh position={[0, 0.7, -0.2]}>
+                            <boxGeometry args={[0.4, 0.4, 0.2]} />
+                            <meshStandardMaterial color="#ffffff" />
+                        </mesh>
+                    </group>
+                );
+            case 'shower':
+                return (
+                    <group>
+                        <mesh position={[0, 0.05, 0]}>
+                            <boxGeometry args={[0.9, 0.1, 0.9]} />
+                            <meshStandardMaterial color="#f8fafc" />
+                        </mesh>
+                        <mesh position={[0, 2.0, -0.4]} rotation={[Math.PI / 2, 0, 0]}>
+                            <cylinderGeometry args={[0.05, 0.05, 0.1]} />
+                            <meshStandardMaterial color="#94a3b8" />
+                        </mesh>
+                    </group>
+                );
+            case 'bathtub':
+                return (
+                    <mesh position={[0, 0.3, 0]}>
+                        <boxGeometry args={[1.7, 0.6, 0.75]} />
+                        <meshStandardMaterial color="#ffffff" />
+                    </mesh>
+                );
+            default: return null;
+        }
+    };
+
+    const render2D = () => {
+        const color = hovered ? "#3b82f6" : "#475569";
+        switch (data.type) {
+            case 'washbasin':
+                return (
+                    <group>
+                        <Line points={[[-0.25, 0.2, 0], [0.25, 0.2, 0], [0.25, -0.2, 0], [-0.25, -0.2, 0], [-0.25, 0.2, 0]] as any} color={color} lineWidth={2} />
+                        <Circle args={[0.15, 32]} position={[0, 0, 0.01]} rotation={[-Math.PI / 2, 0, 0]}>
+                            <meshBasicMaterial color={color} wireframe />
+                        </Circle>
+                    </group>
+                );
+            case 'toilet':
+                return (
+                    <group>
+                        <Circle args={[0.18, 16]} position={[0, 0.1, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+                            <meshBasicMaterial color={color} wireframe />
+                        </Circle>
+                        <Line points={[[-0.2, -0.15, 0], [0.2, -0.15, 0], [0.2, -0.3, 0], [-0.2, -0.3, 0], [-0.2, -0.15, 0]] as any} color={color} lineWidth={2} />
+                    </group>
+                );
+            case 'shower':
+                return (
+                    <group>
+                        <Line points={[[-0.45, 0.45, 0], [0.45, 0.45, 0], [0.45, -0.45, 0], [-0.45, -0.45, 0], [-0.45, 0.45, 0]] as any} color={color} lineWidth={2} />
+                        <Line points={[[-0.45, 0.45, 0], [0.45, -0.45, 0]] as any} color={color} lineWidth={1} />
+                        <Line points={[[-0.45, -0.45, 0], [0.45, 0.45, 0]] as any} color={color} lineWidth={1} />
+                    </group>
+                );
+            case 'bathtub':
+                return (
+                    <group>
+                        <Line points={[[-0.85, 0.37, 0], [0.85, 0.37, 0], [0.85, -0.37, 0], [-0.85, -0.37, 0], [-0.85, 0.37, 0]] as any} color={color} lineWidth={2} />
+                        <Circle args={[0.3, 32]} position={[0.5, 0, 0.01]} scale={[1, 0.8, 1]} rotation={[-Math.PI / 2, 0, 0]}>
+                            <meshBasicMaterial color={color} wireframe />
+                        </Circle>
+                    </group>
+                );
+            default: return null;
+        }
+    };
+
+    return (
+        <group
+            position={[data.x, 0, data.z]}
+            onPointerDown={(e) => {
+                if (!is2D) return;
+                e.stopPropagation();
+                (e.target as Element).setPointerCapture(e.pointerId);
+            }}
+            onPointerMove={handlePointerMove}
+            onPointerUp={(e) => {
+                if (!is2D) return;
+                (e.target as Element).releasePointerCapture(e.pointerId);
+            }}
+            onPointerOver={() => setHovered(true)}
+            onPointerOut={() => setHovered(false)}
+        >
+            {is2D ? (
+                <group rotation={[-Math.PI / 2, 0, 0]}>
+                    <mesh visible={false}>
+                        <planeGeometry args={[1, 1]} />
+                    </mesh>
+                    {render2D()}
+                </group>
+            ) : (
+                render3D()
+            )}
+        </group>
+    );
+}
+
+// --- 8. ESCENA ---
+function PlannerScene({ viewMode, showDimensions, vertices, connections, selectedId, setSelectedId, moveWall, updateVertex, doors, setDoors, windows, setWindows, fixtures, setFixtures }: any) {
     const controlsRef = useRef<any>(null);
     const { camera } = useThree();
 
@@ -485,7 +744,6 @@ function PlannerScene({ viewMode, showDimensions, vertices, connections, selecte
                 const prevConn = connections.find((c: any) => c.end === wallConn.start)!;
                 const nextConn = connections.find((c: any) => c.start === wallConn.end)!;
                 const vPrev = vertices.find((v: any) => v.id === prevConn.start)!;
-                const vNext = vertices.find((v: any) => v.id === nextConn.end)!;
                 const miter = getMiterPoints(vPrev, v1, v2, 0.25);
 
                 const wallData = { v1, v2, outerNormal: miter.bisector };
@@ -510,6 +768,37 @@ function PlannerScene({ viewMode, showDimensions, vertices, connections, selecte
                     />
                 );
             })}
+
+            {windows.map((window: any) => {
+                const wallConn = connections.find((c: any) => c.id === window.wallId);
+                if (!wallConn) return null;
+                const v1 = vertices.find((v: any) => v.id === wallConn.start)!;
+                const v2 = vertices.find((v: any) => v.id === wallConn.end)!;
+                const wallData = { v1, v2 };
+
+                return (
+                    <Window
+                        key={window.id}
+                        windowData={window}
+                        wall={wallData}
+                        viewMode={viewMode}
+                        onDrag={(id: string, ratio: number) => {
+                            setWindows((prev: any) => prev.map((w: any) => w.id === id ? { ...w, positionRatio: ratio } : w));
+                        }}
+                    />
+                );
+            })}
+
+            {fixtures.map((fixture: any) => (
+                <Fixture
+                    key={fixture.id}
+                    data={fixture}
+                    viewMode={viewMode}
+                    onDrag={(id: string, pos: THREE.Vector3) => {
+                        setFixtures((prev: any) => prev.map((f: any) => f.id === id ? { ...f, x: pos.x, z: pos.z } : f));
+                    }}
+                />
+            ))}
 
             {vertices.map((v: any) => (
                 <VertexHandle
@@ -559,8 +848,10 @@ export default function FloorPlanner() {
         });
     };
 
-    // ESTADO DE PUERTAS
+    // ESTADO DE PUERTAS, VENTANAS Y MOBILIARIO
     const [doors, setDoors] = useState<any[]>([]);
+    const [windows, setWindows] = useState<any[]>([]);
+    const [fixtures, setFixtures] = useState<any[]>([]);
     const [doorLibraryOpen, setDoorLibraryOpen] = useState(false);
 
     // --- LÓGICA DE PUERTAS ---
@@ -587,6 +878,58 @@ export default function FloorPlanner() {
         setDoors(prev => [...prev, newDoor]);
         setDoorLibraryOpen(false);
         setSelectedId(null);
+    };
+
+    const handleAddWindowRequest = () => {
+        if (!selectedId) return setModal("You must select a wall");
+        const wall = connections.find(c => c.id === selectedId)!;
+        const v1 = vertices.find(v => v.id === wall.start)!;
+        const v2 = vertices.find(v => v.id === wall.end)!;
+        const length = Math.sqrt(Math.pow(v2.x - v1.x, 2) + Math.pow(v2.z - v1.z, 2));
+
+        if (length < 1.5) return setModal("The wall need to have at least 150cm");
+
+        const newWindow = {
+            id: `window_${Date.now()}`,
+            wallId: selectedId,
+            positionRatio: 0.5,
+        };
+        setWindows(prev => [...prev, newWindow]);
+        setSelectedId(null);
+    };
+
+    const handleAddWashbasinRequest = () => {
+        if (fixtures.some(f => f.type === 'washbasin')) return setModal("Already have a washbasin");
+        addFixture('washbasin');
+    };
+
+    const handleAddShowerRequest = () => {
+        if (fixtures.some(f => f.type === 'shower')) return setModal("Already have a shower");
+        addFixture('shower');
+    };
+
+    const handleAddToiletRequest = () => {
+        if (fixtures.some(f => f.type === 'toilet')) return setModal("Already have a toilet");
+        addFixture('toilet');
+    };
+
+    const handleAddBathtubRequest = () => {
+        if (fixtures.some(f => f.type === 'bathtub')) return setModal("Already have a bathtub");
+        addFixture('bathtub');
+    };
+
+    const addFixture = (type: string) => {
+        // Calcular centro
+        const cx = vertices.reduce((s, v) => s + v.x, 0) / vertices.length;
+        const cz = vertices.reduce((s, v) => s + v.z, 0) / vertices.length;
+        
+        const newFixture = {
+            id: `${type}_${Date.now()}`,
+            type: type,
+            x: cx,
+            z: cz
+        };
+        setFixtures(prev => [...prev, newFixture]);
     };
 
     // --- LÓGICA DE SPLIT (CREAR ESCALÓN) ---
@@ -794,9 +1137,11 @@ export default function FloorPlanner() {
                         { label: 'Split', action: handleSplit },
                         { label: 'Merge', action: handleMerge },
                         { label: 'Add Door', action: handleAddDoorRequest },
-                        { label: 'Add Window', action: () => console.log('Action: Add Window') },
-                        { label: 'Lock', action: () => console.log('Action: Lock Room') },
-                        { label: 'Hide', action: () => console.log('Action: Hide Layer') },
+                        { label: 'Add Window', action: handleAddWindowRequest },
+                        { label: 'Add washbasin', action: handleAddWashbasinRequest },
+                        { label: 'Add shower', action: handleAddShowerRequest },
+                        { label: 'Add toilet', action: handleAddToiletRequest },
+                        { label: 'Add bathtub', action: handleAddBathtubRequest },
                     ].map((btn) => (
                         <button
                             key={btn.label}
@@ -832,6 +1177,10 @@ export default function FloorPlanner() {
                     moveWall={moveWall}
                     doors={doors}
                     setDoors={setDoors}
+                    windows={windows}
+                    setWindows={setWindows}
+                    fixtures={fixtures}
+                    setFixtures={setFixtures}
                 />
             </Canvas>
         </div>
