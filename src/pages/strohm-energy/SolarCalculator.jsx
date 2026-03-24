@@ -656,24 +656,24 @@ function annualKwhFromBill(billEur) {
     return Math.round((billEur / 0.32) * 12);
 }
 
-function fmt(n) { return new Intl.NumberFormat('nl-NL').format(n); }
+function fmt(n) { return new Intl.NumberFormat('en-GB').format(n); }
 function eur(n) { return `€ ${fmt(n)}`; }
 
 // ─── COMPONENTS ──────────────────────────────────────────────────────────────
 
 const MODES = [
-    { id: "A", icon: "☀️", title: "Geen zonnepanelen, geen batterij", desc: "Ik wil zonnepanelen laten installeren, eventueel met batterij" },
-    { id: "C", icon: "🔋", title: "Ik heb al zonnepanelen", desc: "Ik wil een thuisbatterij toevoegen aan mijn bestaande installatie" },
-    { id: "D", icon: "⚡", title: "Alleen een batterij", desc: "Ik wil een thuisbatterij zonder zonnepanelen" },
+    { id: "A", icon: "☀️", title: "No solar panels, no battery", desc: "I want to install solar panels, possibly with a battery" },
+    { id: "C", icon: "🔋", title: "I already have solar panels", desc: "I want to add a home battery to my existing installation" },
+    { id: "D", icon: "⚡", title: "Battery only", desc: "I want a home battery without solar panels" },
 ];
 
 function ModeSelect({ onSelect }) {
     const [selected, setSelected] = useState(null);
     return (
         <div className="animate-in">
-            <div className="step-label">Stap 1 van 4</div>
-            <h1 className="step-title">Wat is uw<br />huidige situatie?</h1>
-            <p className="step-sub">We berekenen het beste systeem op basis van uw situatie.</p>
+            <div className="step-label">Step 1 of 4</div>
+            <h1 className="step-title">What is your<br />current situation?</h1>
+            <p className="step-sub">We calculate the best system based on your situation.</p>
             <div className="mode-grid">
                 {MODES.map(m => (
                     <div
@@ -691,12 +691,12 @@ function ModeSelect({ onSelect }) {
                     onClick={() => setSelected("B")}
                 >
                     <div className="mode-icon">🏠</div>
-                    <div className="mode-title">Zonnepanelen + batterij combinatie</div>
-                    <div className="mode-desc">Ik wil direct een compleet systeem met opslag</div>
+                    <div className="mode-title">Solar panels + battery combination</div>
+                    <div className="mode-desc">I want a complete system with storage right away</div>
                 </div>
             </div>
             <button className="btn-primary" disabled={!selected} onClick={() => onSelect(selected)}>
-                Verder →
+                Continue →
             </button>
         </div>
     );
@@ -709,15 +709,15 @@ function RoofInput({ onNext, onBack }) {
 
     return (
         <div className="animate-in">
-            <div className="step-label">Stap 2 van 4</div>
-            <h1 className="step-title">Uw dakoppervlak</h1>
-            <p className="step-sub">We berekenen hoeveel panelen op uw dak passen.</p>
+            <div className="step-label">Step 2 of 4</div>
+            <h1 className="step-title">Your roof area</h1>
+            <p className="step-sub">We calculate how many panels fit on your roof.</p>
 
             <div className="input-group">
-                <label className="input-label">Invoermethode</label>
+                <label className="input-label">Input method</label>
                 <div className="toggle-row">
                     <button className={`toggle-btn${method === "manual" ? " active" : ""}`} onClick={() => setMethod("manual")}>
-                        Handmatig invoeren
+                        Manual input
                     </button>
                     <button className={`toggle-btn${method === "map" ? " active" : ""}`} onClick={() => setMethod("map")}>
                         📡 Via Google Maps
@@ -727,33 +727,33 @@ function RoofInput({ onNext, onBack }) {
 
             {method === "map" ? (
                 <div className="input-group">
-                    <label className="input-label">Zoek uw adres op de kaart</label>
+                    <label className="input-label">Search for your address on the map</label>
                     <div className="map-placeholder">
                         <div className="map-grid" />
                         <span className="map-house">🛰️</span>
                         <span className="map-label">
-                            {mapClicked ? "DAKTEKENING ACTIEF — DEMO" : "GOOGLE MAPS API VEREIST"}
+                            {mapClicked ? "ROOF DRAWING ACTIVE — DEMO" : "GOOGLE MAPS API REQUIRED"}
                         </span>
                     </div>
                     <div className="api-note">
-                        ↳ In productie: Google Maps Javascript API + Geocoding API vereist.
-                        Gebruiker tekent polygoon op satellietfoto — oppervlak wordt automatisch berekend.
+                        ↳ In production: Google Maps Javascript API + Geocoding API required.
+                        User draws polygon on satellite photo — area is calculated automatically.
                     </div>
                     {!mapClicked ? (
                         <button className="btn-secondary" style={{ marginTop: 12, width: "100%" }} onClick={() => { setMapClicked(true); setRoofM2(52); }}>
-                            Simuleer dakdetectie (demo)
+                            Simulate roof detection (demo)
                         </button>
                     ) : (
                         <div style={{ marginTop: 12, padding: "12px 16px", background: "rgba(46,204,113,0.08)", border: "1px solid rgba(46,204,113,0.2)", borderRadius: 4 }}>
                             <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 12, color: "#2ECC71" }}>
-                                ✓ Dakoppervlak gedetecteerd: 52 m² (gesimuleerd)
+                                ✓ Roof area detected: 52 m² (simulated)
                             </span>
                         </div>
                     )}
                 </div>
             ) : (
                 <div className="input-group">
-                    <label className="input-label">Geschat dakoppervlak (m²)</label>
+                    <label className="input-label">Estimated roof area (m²)</label>
                     <div className="slider-value">{roofM2} m²</div>
                     <div className="slider-container">
                         <input
@@ -762,26 +762,26 @@ function RoofInput({ onNext, onBack }) {
                             className="slider"
                             onChange={e => setRoofM2(+e.target.value)}
                         />
-                        <div className="slider-labels"><span>10 m²</span><span>Klein dak</span><span>Groot dak</span><span>120 m²</span></div>
+                        <div className="slider-labels"><span>10 m²</span><span>Small roof</span><span>Large roof</span><span>120 m²</span></div>
                     </div>
                     <div style={{ fontSize: 12, color: "#555", marginTop: 8 }}>
-                        Gemiddeld Nederlands rijtjeshuis: 25-40 m² bruikbaar dakoppervlak
+                        Average Dutch terraced house: 25-40 m² usable roof area
                     </div>
                 </div>
             )}
 
             <div className="input-group">
-                <label className="input-label">Type dak</label>
+                <label className="input-label">Roof type</label>
                 <select className="input-field">
-                    <option>Schuin dak (dakpannen)</option>
-                    <option>Schuin dak (leisteen)</option>
-                    <option>Plat dak</option>
+                    <option>Slanted roof (tiles)</option>
+                    <option>Slanted roof (slate)</option>
+                    <option>Flat roof</option>
                 </select>
             </div>
 
             <div className="btn-row">
-                <button className="btn-secondary" onClick={onBack}>← Terug</button>
-                <button className="btn-primary" onClick={() => onNext(roofM2)}>Verder →</button>
+                <button className="btn-secondary" onClick={onBack}>← Back</button>
+                <button className="btn-primary" onClick={() => onNext(roofM2)}>Continue →</button>
             </div>
         </div>
     );
@@ -794,13 +794,13 @@ function EnergyInput({ mode, onNext, onBack }) {
 
     return (
         <div className="animate-in">
-            <div className="step-label">Stap 3 van 4</div>
-            <h1 className="step-title">Uw energieverbruik</h1>
-            <p className="step-sub">We berekenen uw besparing en terugverdientijd.</p>
+            <div className="step-label">Step 3 of 4</div>
+            <h1 className="step-title">Your energy consumption</h1>
+            <p className="step-sub">We calculate your savings and payback period.</p>
 
             {mode === "C" && (
                 <div className="input-group">
-                    <label className="input-label">Huidig zonnepanelenvermogen (kWp)</label>
+                    <label className="input-label">Current solar panel power (kWp)</label>
                     <div className="slider-value">{existingKwp} kWp</div>
                     <div className="slider-container">
                         <input type="range" min="1" max="15" step="0.5" value={existingKwp}
@@ -811,8 +811,8 @@ function EnergyInput({ mode, onNext, onBack }) {
             )}
 
             <div className="input-group">
-                <label className="input-label">Huidige maandelijkse energierekening (€)</label>
-                <div className="slider-value">€ {billEur}/mnd</div>
+                <label className="input-label">Current monthly energy bill (€)</label>
+                <div className="slider-value">€ {billEur}/mo</div>
                 <div className="slider-container">
                     <input type="range" min="50" max="400" step="10" value={billEur}
                         className="slider" onChange={e => setBillEur(+e.target.value)} />
@@ -822,18 +822,18 @@ function EnergyInput({ mode, onNext, onBack }) {
 
             {(mode === "A") && (
                 <div className="input-group">
-                    <label className="input-label">Ook interesse in een thuisbatterij?</label>
+                    <label className="input-label">Are you also interested in a home battery?</label>
                     <div className="toggle-row">
-                        <button className={`toggle-btn${wantBattery ? " active" : ""}`} onClick={() => setWantBattery(true)}>Ja, combinatie</button>
-                        <button className={`toggle-btn${!wantBattery ? " active" : ""}`} onClick={() => setWantBattery(false)}>Alleen zonnepanelen</button>
+                        <button className={`toggle-btn${wantBattery ? " active" : ""}`} onClick={() => setWantBattery(true)}>Yes, combination</button>
+                        <button className={`toggle-btn${!wantBattery ? " active" : ""}`} onClick={() => setWantBattery(false)}>Solar panels only</button>
                     </div>
                 </div>
             )}
 
             <div className="btn-row">
-                <button className="btn-secondary" onClick={onBack}>← Terug</button>
+                <button className="btn-secondary" onClick={onBack}>← Back</button>
                 <button className="btn-primary" onClick={() => onNext({ billEur, existingKwp, wantBattery })}>
-                    Bereken →
+                    Calculate →
                 </button>
             </div>
         </div>
@@ -857,37 +857,37 @@ function Results({ mode, roofM2, energy, onLeadSubmit, leadSent }) {
     const [postcode, setPostcode] = useState("");
 
     const configLabel =
-        mode === "D" ? `Thuisbatterij ${battery?.recommended} kWh` :
-            mode === "C" ? `Thuisbatterij ${battery?.recommended} kWh (bijplaatsen)` :
-                solar && battery ? `${solar.kWp} kWp + ${battery.recommended} kWh batterij` :
-                    solar ? `${solar.kWp} kWp zonnepanelensysteem` : "";
+        mode === "D" ? `Home battery ${battery?.recommended} kWh` :
+            mode === "C" ? `Home battery ${battery?.recommended} kWh (add-on)` :
+                solar && battery ? `${solar.kWp} kWp + ${battery.recommended} kWh battery` :
+                    solar ? `${solar.kWp} kWp solar panel system` : "";
 
     return (
         <div className="animate-in">
-            <div className="step-label">Uw indicatieve offerte</div>
-            <h1 className="step-title" style={{ marginBottom: 24 }}>Resultaten</h1>
+            <div className="step-label">Your indicative quote</div>
+            <h1 className="step-title" style={{ marginBottom: 24 }}>Results</h1>
 
             <div className="results-hero">
-                <div className="results-headline">Aanbevolen configuratie</div>
+                <div className="results-headline">Recommended configuration</div>
                 <div className="results-config">{configLabel}</div>
                 <div className="results-sub">
-                    {solar && `${solar.panels} panelen op ${Math.round(roofM2 * 0.75)} m² bruikbaar dakoppervlak`}
-                    {mode === "C" && `Bestaand systeem: ${existingKwp} kWp`}
+                    {solar && `${solar.panels} panels on ${Math.round(roofM2 * 0.75)} m² usable roof area`}
+                    {mode === "C" && `Existing system: ${existingKwp} kWp`}
                 </div>
 
                 {solar && (
                     <div className="metrics-grid">
                         <div className="metric-card">
                             <div className="metric-value">{fmt(solar.annualKwh)}</div>
-                            <div className="metric-label">kWh/jaar opwek</div>
+                            <div className="metric-label">kWh/year generation</div>
                         </div>
                         <div className="metric-card">
                             <div className="metric-value">€ {fmt(solar.annualSavings)}</div>
-                            <div className="metric-label">Besparing/jaar</div>
+                            <div className="metric-label">Savings/year</div>
                         </div>
                         <div className="metric-card">
-                            <div className="metric-value">{solar.payback} jr</div>
-                            <div className="metric-label">Terugverdientijd</div>
+                            <div className="metric-value">{solar.payback} yr</div>
+                            <div className="metric-label">Payback period</div>
                         </div>
                     </div>
                 )}
@@ -896,11 +896,11 @@ function Results({ mode, roofM2, energy, onLeadSubmit, leadSent }) {
                     <div className="metrics-grid" style={{ gridTemplateColumns: "1fr 1fr" }}>
                         <div className="metric-card">
                             <div className="metric-value">{battery.recommended} kWh</div>
-                            <div className="metric-label">Batterijcapaciteit</div>
+                            <div className="metric-label">Battery capacity</div>
                         </div>
                         <div className="metric-card">
                             <div className="metric-value">~ 80%</div>
-                            <div className="metric-label">Zelfvoorziening</div>
+                            <div className="metric-label">Self-sufficiency</div>
                         </div>
                     </div>
                 )}
@@ -908,8 +908,8 @@ function Results({ mode, roofM2, energy, onLeadSubmit, leadSent }) {
 
             <div className="price-band">
                 <div>
-                    <div className="price-label">Indicatieve installatieprijs</div>
-                    <div style={{ fontSize: 11, color: "#555", marginTop: 4 }}>Inclusief materiaal en arbeid, excl. BTW</div>
+                    <div className="price-label">Indicative installation price</div>
+                    <div style={{ fontSize: 11, color: "#555", marginTop: 4 }}>Includes materials and labor, excl. VAT</div>
                 </div>
                 <div className="price-range">{eur(totalMin)} – {eur(totalMax)}</div>
             </div>
@@ -917,63 +917,63 @@ function Results({ mode, roofM2, energy, onLeadSubmit, leadSent }) {
             <div className="breakdown-table">
                 {solar && <>
                     <div className="breakdown-row">
-                        <span className="breakdown-key">Systeem vermogen</span>
+                        <span className="breakdown-key">System power</span>
                         <span className="breakdown-val">{solar.kWp} kWp</span>
                     </div>
                     <div className="breakdown-row">
-                        <span className="breakdown-key">Aantal panelen</span>
+                        <span className="breakdown-key">Number of panels</span>
                         <span className="breakdown-val">{solar.panels} × 400 Wp</span>
                     </div>
                     <div className="breakdown-row">
-                        <span className="breakdown-key">Jaarlijkse opwek (NL gem.)</span>
+                        <span className="breakdown-key">Annual generation (NL average)</span>
                         <span className="breakdown-val">{fmt(solar.annualKwh)} kWh</span>
                     </div>
                     <div className="breakdown-row">
-                        <span className="breakdown-key">CO₂ besparing/jaar</span>
+                        <span className="breakdown-key">CO₂ savings/year</span>
                         <span className="breakdown-val">{fmt(solar.co2)} kg</span>
                     </div>
                 </>}
                 {battery && <>
                     <div className="breakdown-row">
-                        <span className="breakdown-key">Batterijcapaciteit</span>
+                        <span className="breakdown-key">Battery capacity</span>
                         <span className="breakdown-val">{battery.recommended} kWh</span>
                     </div>
                     <div className="breakdown-row">
-                        <span className="breakdown-key">Batterijkosten</span>
+                        <span className="breakdown-key">Battery costs</span>
                         <span className="breakdown-val">{eur(battery.costMin)} – {eur(battery.costMax)}</span>
                     </div>
                 </>}
                 <div className="breakdown-row">
-                    <span className="breakdown-key">Jaarverbruik (geschat)</span>
+                    <span className="breakdown-key">Annual consumption (est.)</span>
                     <span className="breakdown-val">{fmt(annualKwh)} kWh</span>
                 </div>
             </div>
 
             <div className="disclaimer">
-                ↳ Deze berekening is indicatief op basis van NL-gemiddelden (850 kWh/kWp, € 0,32/kWh).
-                Werkelijke opbrengst afhankelijk van dakoriëntatie, schaduw en installateur.
-                Saldering-afbouw na 2027 verdisconteerd (–15% op jaarlijkse besparing).
-                Definitieve prijzen door gecertificeerde installateur na dakschouw.
+                ↳ This calculation is indicative based on NL averages (850 kWh/kWp, € 0.32/kWh).
+                Actual yield depends on roof orientation, shade, and installer.
+                Net metering phase-out after 2027 discounted (–15% on annual savings).
+                Final prices by certified installer after roof inspection.
             </div>
 
             <div style={{ display: "flex", gap: 8, marginBottom: 32 }}>
-                <button className="pdf-btn" onClick={() => alert("PDF generatie: in productie via Puppeteer/server-side rendering. Bevat: configuratie, besparingen, Strohm.energy branding, referentienummer.")}>
-                    📄 Download indicatieve offerte (PDF)
+                <button className="pdf-btn" onClick={() => alert("PDF generation: in production via Puppeteer/server-side rendering. Includes: configuration, savings, Strohm.energy branding, reference number.")}>
+                    📄 Download indicative quote (PDF)
                 </button>
             </div>
 
             <div className="lead-section">
                 {!leadSent ? (
                     <>
-                        <div className="lead-title">Installateur aanvragen</div>
+                        <div className="lead-title">Request installer</div>
                         <p className="lead-sub">
-                            Laat uw gegevens achter. Wij koppelen u binnen 24 uur aan een gecertificeerde Strohm.energy installateur in uw regio. Geen verplichtingen.
+                            Leave your details. We will connect you within 24 hours to a certified Strohm.energy installer in your region. No obligations.
                         </p>
 
                         <div className="input-row" style={{ marginBottom: 16 }}>
                             <div className="input-group" style={{ marginBottom: 0 }}>
-                                <label className="input-label">Naam</label>
-                                <input className="input-field" placeholder="Jan de Vries" value={name} onChange={e => setName(e.target.value)} />
+                                <label className="input-label">Name</label>
+                                <input className="input-field" placeholder="John Doe" value={name} onChange={e => setName(e.target.value)} />
                             </div>
                             <div className="input-group" style={{ marginBottom: 0 }}>
                                 <label className="input-label">Postcode</label>
@@ -983,17 +983,17 @@ function Results({ mode, roofM2, energy, onLeadSubmit, leadSent }) {
 
                         <div className="input-row" style={{ marginBottom: 24 }}>
                             <div className="input-group" style={{ marginBottom: 0 }}>
-                                <label className="input-label">E-mail</label>
-                                <input className="input-field" placeholder="jan@email.nl" value={email} onChange={e => setEmail(e.target.value)} />
+                                <label className="input-label">Email</label>
+                                <input className="input-field" placeholder="john@email.com" value={email} onChange={e => setEmail(e.target.value)} />
                             </div>
                             <div className="input-group" style={{ marginBottom: 0 }}>
-                                <label className="input-label">Telefoonnummer</label>
+                                <label className="input-label">Phone number</label>
                                 <input className="input-field" placeholder="06 12345678" value={tel} onChange={e => setTel(e.target.value)} />
                             </div>
                         </div>
 
                         <div style={{ fontSize: 11, color: "#444", marginBottom: 20, fontFamily: "'DM Mono', monospace", lineHeight: 1.6 }}>
-                            Door te versturen gaat u akkoord dat Strohm.energy uw gegevens deelt met een gecertificeerde installateur in uw regio.
+                            By submitting, you agree that Strohm.energy shares your data with a certified installer in your region.
                         </div>
 
                         <button
@@ -1001,16 +1001,16 @@ function Results({ mode, roofM2, energy, onLeadSubmit, leadSent }) {
                             disabled={!name || !email || !postcode}
                             onClick={() => onLeadSubmit({ name, email, tel, postcode })}
                         >
-                            Installateur aanvragen →
+                            Request installer →
                         </button>
                     </>
                 ) : (
                     <div className="success-box">
                         <span className="success-icon">✅</span>
-                        <div className="success-title">Aanvraag ontvangen</div>
+                        <div className="success-title">Request received</div>
                         <p className="success-text">
-                            We koppelen u binnen 24 uur aan een gecertificeerde installateur in uw regio.<br />
-                            U ontvangt een bevestiging op uw e-mailadres.
+                            We will connect you within 24 hours to a certified installer in your region.<br />
+                            You will receive a confirmation at your email address.
                         </p>
                     </div>
                 )}
@@ -1031,7 +1031,7 @@ export default function SolarCalculator() {
     const totalSteps = 4;
     const progress = ((step + 1) / totalSteps) * 100;
 
-    const STEP_NAMES = ["Situatie", "Dak", "Verbruik", "Resultaten"];
+    const STEP_NAMES = ["Situation", "Roof", "Consumption", "Results"];
 
     return (
         <>

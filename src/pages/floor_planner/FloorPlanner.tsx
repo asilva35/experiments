@@ -2,6 +2,7 @@ import { useState, useMemo, useRef, useEffect } from 'react'
 import { Canvas, useThree } from '@react-three/fiber'
 import { OrbitControls, Grid, PerspectiveCamera, ContactShadows, Html, Line, Circle } from '@react-three/drei'
 import * as THREE from 'three'
+import { jsPDF } from "jspdf"
 
 const VIEW_MODES = { ZENITHAL: '2D', THREE_D: '3D' } as const;
 type ViewMode = typeof VIEW_MODES[keyof typeof VIEW_MODES];
@@ -854,6 +855,60 @@ export default function FloorPlanner() {
     const [fixtures, setFixtures] = useState<any[]>([]);
     const [doorLibraryOpen, setDoorLibraryOpen] = useState(false);
 
+    // --- 2. FUNCIÓN PARA GENERAR PDF ---
+    const downloadPDF = () => {
+        // Obligamos a que esté en 2D para la foto
+        if (viewMode !== VIEW_MODES.ZENITHAL) {
+            setModal("Please switch to 2D Blueprint mode before downloading the PDF");
+            return;
+        }
+
+        const doc = new jsPDF();
+        const canvas = document.querySelector('canvas');
+        if (!canvas) return;
+
+        // Capturar imagen del canvas
+        const imgData = canvas.toDataURL('image/png');
+
+        // Encabezado
+        doc.setFillColor(24, 24, 27); // Zinc-900
+        doc.rect(0, 0, 210, 40, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(22);
+        doc.text("FLOOR PLAN REPORT", 15, 25);
+
+        // Insertar Imagen del Plano
+        doc.addImage(imgData, 'PNG', 15, 50, 180, 100);
+
+        // Tabla de Inventario
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(14);
+        doc.text("Project Inventory", 15, 165);
+        doc.line(15, 168, 60, 168);
+
+        const inventory = [
+            { name: "Walls", count: connections.length },
+            { name: "Doors", count: doors.length },
+            { name: "Windows", count: windows.length },
+            { name: "Washbasins", count: fixtures.filter((f: any) => f.type === 'washbasin').length },
+            { name: "Toilets", count: fixtures.filter((f: any) => f.type === 'toilet').length },
+            { name: "Showers", count: fixtures.filter((f: any) => f.type === 'shower').length },
+            { name: "Bathtubs", count: fixtures.filter((f: any) => f.type === 'bathtub').length },
+        ];
+
+        doc.setFontSize(10);
+        let yPos = 180;
+        inventory.forEach(item => {
+            if (item.count > 0) {
+                doc.text(`${item.name}:`, 15, yPos);
+                doc.text(`${item.count} units`, 180, yPos, { align: 'right' });
+                yPos += 8;
+            }
+        });
+
+        doc.save("Floor_Plan_Report.pdf");
+    };
+
     // --- LÓGICA DE PUERTAS ---
     const handleAddDoorRequest = () => {
         if (!selectedId) return setModal("You must select a wall");
@@ -1158,12 +1213,19 @@ export default function FloorPlanner() {
                     ))}
                 </div>
 
+                <button
+                    onClick={downloadPDF}
+                    className="mt-5 w-full py-4 bg-zinc-900 text-white text-[10px] font-black uppercase tracking-widest rounded-2xl hover:bg-orange-600 transition-all flex items-center justify-center gap-2"
+                >
+                    <span>Download Blueprint PDF</span>
+                </button>
+
                 <div className="mt-6 pt-4 border-t border-zinc-100 italic">
                     <p className="text-[9px] text-zinc-400 text-center">Select a wall to enable advanced operations</p>
                 </div>
             </div>
 
-            <Canvas shadows gl={{ antialias: true }}>
+            <Canvas shadows gl={{ antialias: true, preserveDrawingBuffer: true }}>
                 <PlannerScene
                     viewMode={viewMode}
                     showDimensions={showDimensions}

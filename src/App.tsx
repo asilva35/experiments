@@ -7,12 +7,13 @@ import NutritionalCalculator from './pages/nutritional-calculator/NutritionalCal
 import FaceConfigurator from './pages/glasses-tryon/FaceConfigurator'
 import FloorPlanner from './pages/floor_planner/FloorPlanner'
 import SolarMapPicker from './pages/solar_map/SolarMapPicker'
+//import SolarCalculator from './pages/strohm-energy/SolarCalculator'
 
 
 // Un componente simple para la página de inicio o selección
 const Home = () => (
   <div className="p-20 text-white font-mono bg-slate-900 h-screen">
-    <h1 className="text-3xl mb-8 border-b border-slate-800 pb-4">Experiments</h1>
+    <h1 className="text-3xl mb-8 border-b border-slate-800 pb-4">Projects</h1>
     <nav className="flex flex-col gap-4">
       <Link to="/stress-materials" className="text-cyan-400 hover:text-cyan-300 transition-colors flex items-center gap-2">
         <span className="opacity-50">/01</span> Stress Analysis Beam
@@ -38,6 +39,9 @@ const Home = () => (
       <Link to="/solar-map" className="text-slate-500 hover:text-slate-400 transition-colors flex items-center gap-2">
         <span className="opacity-50">/08</span> Solar Map
       </Link>
+      {/* <Link to="/solar-calculator" className="text-slate-500 hover:text-slate-400 transition-colors flex items-center gap-2">
+        <span className="opacity-50">/09</span> Solar Calculator
+      </Link> */}
 
     </nav>
   </div>
@@ -56,6 +60,7 @@ export default function App() {
         <Route path="/face-configurator" element={<FaceConfigurator />} />
         <Route path="/floor-planner" element={<FloorPlanner />} />
         <Route path="/solar-map" element={<SolarMapPicker />} />
+        {/* <Route path="/solar-calculator" element={<SolarCalculator />} /> */}
       </Routes>
     </BrowserRouter>
   )
