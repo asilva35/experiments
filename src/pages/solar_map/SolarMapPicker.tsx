@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useMemo, useEffect } from 'react';
+import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import { GoogleMap, useJsApiLoader, Polygon, StandaloneSearchBox, Marker } from '@react-google-maps/api';
 import { jsPDF } from "jspdf";
 
