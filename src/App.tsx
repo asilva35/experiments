@@ -6,6 +6,8 @@ import GlassExperience from './pages/glass/GlassExperience'
 import NutritionalCalculator from './pages/nutritional-calculator/NutritionalCalculator'
 import FaceConfigurator from './pages/glasses-tryon/FaceConfigurator'
 import FloorPlanner from './pages/floor_planner/FloorPlanner'
+import SolarMapPicker from './pages/solar_map/SolarMapPicker'
+
 
 // Un componente simple para la página de inicio o selección
 const Home = () => (
@@ -33,6 +35,10 @@ const Home = () => (
       <Link to="/floor-planner" className="text-slate-500 hover:text-slate-400 transition-colors flex items-center gap-2">
         <span className="opacity-50">/07</span> Floor Planner
       </Link>
+      <Link to="/solar-map" className="text-slate-500 hover:text-slate-400 transition-colors flex items-center gap-2">
+        <span className="opacity-50">/08</span> Solar Map
+      </Link>
+
     </nav>
   </div>
 )
@@ -49,6 +55,7 @@ export default function App() {
         <Route path="/nutritional-calculator" element={<NutritionalCalculator />} />
         <Route path="/face-configurator" element={<FaceConfigurator />} />
         <Route path="/floor-planner" element={<FloorPlanner />} />
+        <Route path="/solar-map" element={<SolarMapPicker />} />
       </Routes>
     </BrowserRouter>
   )
