@@ -8,6 +8,7 @@ import FaceConfigurator from './pages/glasses-tryon/FaceConfigurator'
 import FloorPlanner from './pages/floor_planner/FloorPlanner'
 import SolarMapPicker from './pages/solar_map/SolarMapPicker'
 import ConcreteMapPicker from './pages/concrete_quoter/ConcreteMapPicker'
+import MathVisualizer from './pages/math-visualizer/MathVisualizer'
 
 
 // Un componente simple para la página de inicio o selección
@@ -42,6 +43,9 @@ const Home = () => (
       <Link to="/concrete-map-picker" className="text-slate-500 hover:text-slate-400 transition-colors flex items-center gap-2">
         <span className="opacity-50">/09</span> Concrete Map Picker
       </Link>
+      <Link to="/math-visualizer" className="text-slate-500 hover:text-slate-400 transition-colors flex items-center gap-2">
+        <span className="opacity-50">/10</span> Math Visualizer
+      </Link>
 
     </nav>
   </div>
@@ -61,6 +65,7 @@ export default function App() {
         <Route path="/floor-planner" element={<FloorPlanner />} />
         <Route path="/solar-map" element={<SolarMapPicker />} />
         <Route path="/concrete-map-picker" element={<ConcreteMapPicker />} />
+        <Route path="/math-visualizer" element={<MathVisualizer />} />
       </Routes>
     </BrowserRouter>
   )
