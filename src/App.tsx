@@ -7,7 +7,7 @@ import NutritionalCalculator from './pages/nutritional-calculator/NutritionalCal
 import FaceConfigurator from './pages/glasses-tryon/FaceConfigurator'
 import FloorPlanner from './pages/floor_planner/FloorPlanner'
 import SolarMapPicker from './pages/solar_map/SolarMapPicker'
-//import SolarCalculator from './pages/strohm-energy/SolarCalculator'
+import ConcreteMapPicker from './pages/concrete_quoter/ConcreteMapPicker'
 
 
 // Un componente simple para la página de inicio o selección
@@ -39,9 +39,9 @@ const Home = () => (
       <Link to="/solar-map" className="text-slate-500 hover:text-slate-400 transition-colors flex items-center gap-2">
         <span className="opacity-50">/08</span> Solar Map
       </Link>
-      {/* <Link to="/solar-calculator" className="text-slate-500 hover:text-slate-400 transition-colors flex items-center gap-2">
-        <span className="opacity-50">/09</span> Solar Calculator
-      </Link> */}
+      <Link to="/concrete-map-picker" className="text-slate-500 hover:text-slate-400 transition-colors flex items-center gap-2">
+        <span className="opacity-50">/09</span> Concrete Map Picker
+      </Link>
 
     </nav>
   </div>
@@ -60,7 +60,7 @@ export default function App() {
         <Route path="/face-configurator" element={<FaceConfigurator />} />
         <Route path="/floor-planner" element={<FloorPlanner />} />
         <Route path="/solar-map" element={<SolarMapPicker />} />
-        {/* <Route path="/solar-calculator" element={<SolarCalculator />} /> */}
+        <Route path="/concrete-map-picker" element={<ConcreteMapPicker />} />
       </Routes>
     </BrowserRouter>
   )
