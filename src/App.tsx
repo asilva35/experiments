@@ -9,6 +9,7 @@ import FloorPlanner from './pages/floor_planner/FloorPlanner'
 import SolarMapPicker from './pages/solar_map/SolarMapPicker'
 import ConcreteMapPicker from './pages/concrete_quoter/ConcreteMapPicker'
 import MathVisualizer from './pages/math-visualizer/MathVisualizer'
+import VRPhotoStudioTour from './pages/vr-showcase/VRPhotoStudioTour'
 
 
 // Un componente simple para la página de inicio o selección
@@ -46,6 +47,9 @@ const Home = () => (
       <Link to="/math-visualizer" className="text-slate-500 hover:text-slate-400 transition-colors flex items-center gap-2">
         <span className="opacity-50">/10</span> Math Visualizer
       </Link>
+      <Link to="/vr-photostudio-tour" className="text-slate-500 hover:text-slate-400 transition-colors flex items-center gap-2">
+        <span className="opacity-50">/11</span> VR Photo Studio Tour
+      </Link>
 
     </nav>
   </div>
@@ -66,6 +70,7 @@ export default function App() {
         <Route path="/solar-map" element={<SolarMapPicker />} />
         <Route path="/concrete-map-picker" element={<ConcreteMapPicker />} />
         <Route path="/math-visualizer" element={<MathVisualizer />} />
+        <Route path="/vr-photostudio-tour" element={<VRPhotoStudioTour />} />
       </Routes>
     </BrowserRouter>
   )
