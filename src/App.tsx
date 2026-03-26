@@ -11,6 +11,7 @@ import ConcreteMapPicker from './pages/concrete_quoter/ConcreteMapPicker'
 import MathVisualizer from './pages/math-visualizer/MathVisualizer'
 import VRPhotoStudioTour from './pages/vr-showcase/VRPhotoStudioTour'
 import SportManagementSystem from './pages/sport_managment/SportManagmentSystem'
+import AcademicPage from './pages/academic/AcademicPage'
 
 
 // Un componente simple para la página de inicio o selección
@@ -54,6 +55,9 @@ const Home = () => (
       <Link to="/sport-management" className="text-emerald-500 hover:text-emerald-400 transition-colors flex items-center gap-2">
         <span className="opacity-50">/12</span> Sport Management System
       </Link>
+      <Link to="/academic" className="text-emerald-500 hover:text-emerald-400 transition-colors flex items-center gap-2">
+        <span className="opacity-50">/13</span> Academic Page
+      </Link>
 
     </nav>
   </div>
@@ -76,6 +80,7 @@ export default function App() {
         <Route path="/math-visualizer" element={<MathVisualizer />} />
         <Route path="/vr-photostudio-tour" element={<VRPhotoStudioTour />} />
         <Route path="/sport-management" element={<SportManagementSystem />} />
+        <Route path="/academic" element={<AcademicPage />} />
       </Routes>
     </BrowserRouter>
   )
