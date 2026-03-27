@@ -12,6 +12,8 @@ import MathVisualizer from './pages/math-visualizer/MathVisualizer'
 import VRPhotoStudioTour from './pages/vr-showcase/VRPhotoStudioTour'
 import SportManagementSystem from './pages/sport_managment/SportManagmentSystem'
 import AcademicPage from './pages/academic/AcademicPage'
+import ElectricBike from './pages/electric_bike/ElectricBike'
+import Materials from './pages/materials/Materials'
 
 
 // Un componente simple para la página de inicio o selección
@@ -58,6 +60,12 @@ const Home = () => (
       <Link to="/academic" className="text-emerald-500 hover:text-emerald-400 transition-colors flex items-center gap-2">
         <span className="opacity-50">/13</span> Academic Page
       </Link>
+      <Link to="/electric-bike" className="text-emerald-500 hover:text-emerald-400 transition-colors flex items-center gap-2">
+        <span className="opacity-50">/14</span> Electric Bike
+      </Link>
+      <Link to="/materials" className="text-emerald-500 hover:text-emerald-400 transition-colors flex items-center gap-2">
+        <span className="opacity-50">/15</span> Materials
+      </Link>
 
     </nav>
   </div>
@@ -81,6 +89,8 @@ export default function App() {
         <Route path="/vr-photostudio-tour" element={<VRPhotoStudioTour />} />
         <Route path="/sport-management" element={<SportManagementSystem />} />
         <Route path="/academic" element={<AcademicPage />} />
+        <Route path="/electric-bike" element={<ElectricBike />} />
+        <Route path="/materials" element={<Materials />} />
       </Routes>
     </BrowserRouter>
   )
