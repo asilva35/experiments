@@ -14,6 +14,9 @@ import SportManagementSystem from './pages/sport_managment/SportManagmentSystem'
 import AcademicPage from './pages/academic/AcademicPage'
 import ElectricBike from './pages/electric_bike/ElectricBike'
 import Materials from './pages/materials/Materials'
+import MatcapLab from './pages/matcaplab/MatcapLab'
+import MatcapComposer from './pages/matcaplab/MatcapComposer'
+import SmartLoader from './pages/matcaplab/SmartLoader'
 
 
 // Un componente simple para la página de inicio o selección
@@ -66,6 +69,15 @@ const Home = () => (
       <Link to="/materials" className="text-emerald-500 hover:text-emerald-400 transition-colors flex items-center gap-2">
         <span className="opacity-50">/15</span> Materials
       </Link>
+      <Link to="/matcaplab" className="text-emerald-500 hover:text-emerald-400 transition-colors flex items-center gap-2">
+        <span className="opacity-50">/16</span> Matcap Lab
+      </Link>
+      <Link to="/matcapcomposer" className="text-emerald-500 hover:text-emerald-400 transition-colors flex items-center gap-2">
+        <span className="opacity-50">/17</span> Matcap Composer
+      </Link>
+      <Link to="/smartloader" className="text-emerald-500 hover:text-emerald-400 transition-colors flex items-center gap-2">
+        <span className="opacity-50">/18</span> Smart Loader
+      </Link>
 
     </nav>
   </div>
@@ -91,6 +103,9 @@ export default function App() {
         <Route path="/academic" element={<AcademicPage />} />
         <Route path="/electric-bike" element={<ElectricBike />} />
         <Route path="/materials" element={<Materials />} />
+        <Route path="/matcaplab" element={<MatcapLab />} />
+        <Route path="/matcapcomposer" element={<MatcapComposer />} />
+        <Route path="/smartloader" element={<SmartLoader />} />
       </Routes>
     </BrowserRouter>
   )

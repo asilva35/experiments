@@ -1,6 +1,6 @@
 import { useState, Suspense, useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, useGLTF, Environment, Html, Stats, Float } from '@react-three/drei';
+import { OrbitControls, useGLTF, Environment, Html, Stats, Float, useTexture } from '@react-three/drei';
 import { useControls, folder } from 'leva';
 import * as THREE from 'three';
 
@@ -66,18 +66,49 @@ const materialsConfig: any = {
 };
 
 // --- COMPONENTE DEL MODELO (Aplica el material dinámico) ---
-function ChichenItzaModel({ materialKey, materialProps }: { materialKey: string, materialProps: any }) {
+function ChichenItzaModel({ /*materialKey, materialProps,*/ materialType, physicalProps }: { materialKey: string, materialProps: any, materialType: string, physicalProps: any }) {
     // 💡 Asegúrate de tener el archivo en /public/models/chichen-itza.glb
     const { scene } = useGLTF('/models/gltf/chichen-itza.glb');
     // const materialProps = materialsConfig[materialKey];
 
+    const matcaps = useTexture({
+        gold: '/textures/matcaps/gold.png',
+        plastic: '/textures/matcaps/plastic-white.png',
+    });
+
+    // const material = useMemo(() => {
+    //     return new THREE.MeshPhysicalMaterial({
+    //         ...materialProps,
+    //         transparent: materialKey === 'glass' || materialKey === 'diamond',
+    //         side: THREE.DoubleSide,
+    //     });
+    // }, [materialProps]);
+
     const material = useMemo(() => {
-        return new THREE.MeshPhysicalMaterial({
-            ...materialProps,
-            transparent: materialKey === 'glass' || materialKey === 'diamond',
-            side: THREE.DoubleSide,
-        });
-    }, [materialProps]);
+        // Modo Físico Manual (El que teníamos antes)
+        if (materialType === 'physical') {
+            return new THREE.MeshPhysicalMaterial({
+                ...physicalProps,
+                side: THREE.DoubleSide,
+            });
+        }
+
+        // 💡 Modos MatCap (Renderizado ultra rápido)
+        if (materialType === 'matcap_gold') {
+            return new THREE.MeshMatcapMaterial({
+                matcap: matcaps.gold,
+                side: THREE.DoubleSide,
+            });
+        }
+
+        if (materialType === 'matcap_plastic') {
+            return new THREE.MeshMatcapMaterial({
+                matcap: matcaps.plastic,
+                side: THREE.DoubleSide,
+            });
+        }
+
+    }, [materialType, physicalProps, matcaps]);
 
     // Recorremos la escena y aplicamos el material a todos los meshes
     scene.traverse((node: any) => {
@@ -101,7 +132,7 @@ function ChichenItzaModel({ materialKey, materialProps }: { materialKey: string,
 }
 
 // --- COMPONENTE DEL VISUALIZADOR (Inside Canvas) ---
-function MaterialViz({ materialKey, materialProps }: { materialKey: string, materialProps: any }) {
+function MaterialViz({ materialKey, materialProps, materialType, physicalProps }: { materialKey: string, materialProps: any, materialType: string, physicalProps: any }) {
     return (
         <>
             <color attach="background" args={['#0c0c0e']} />
@@ -125,7 +156,7 @@ function MaterialViz({ materialKey, materialProps }: { materialKey: string, mate
 
             {/* Chichen Itza con el material seleccionado */}
             <Suspense fallback={<Html center><div className="text-white">Loading Model...</div></Html>}>
-                <ChichenItzaModel materialKey={materialKey} materialProps={materialProps} />
+                <ChichenItzaModel materialKey={materialKey} materialProps={materialProps} materialType={materialType} physicalProps={physicalProps} />
             </Suspense>
         </>
     );
@@ -134,6 +165,40 @@ function MaterialViz({ materialKey, materialProps }: { materialKey: string, mate
 // --- EXPORT DEFAULT (Full Page Layout con UI) ---
 export default function ChichenItzaLab() {
     const [materialKey, setMaterialKey] = useState('steel');
+
+    // 💡 CONFIGURACIÓN DE LEVA (Selector de Tipo de Material)
+    const { materialType } = useControls({
+        'Tipo de Renderizado': folder({
+            materialType: {
+                label: 'Modo',
+                options: {
+                    'Físico (Manual PBR)': 'physical',
+                    '⚡ MatCap Oro': 'matcap_gold',
+                    '⚡ MatCap Plástico': 'matcap_plastic',
+                },
+                value: 'physical' // Valor por defecto
+            },
+        }),
+    });
+
+    // 💡 Controles físicos (solo se muestran si materialType es 'physical')
+    const physicalProps = useControls('Físico (Manual PBR)', {
+        'Material Base': folder({
+            color: '#ffffff',
+            emissive: '#000000',
+            roughness: { value: 0.1, min: 0, max: 1, step: 0.01 },
+            metalness: { value: 1.0, min: 0, max: 1, step: 0.01 },
+            reflectivity: { value: 0.5, min: 0, max: 1, step: 0.01 },
+            ior: { value: 1.5, min: 1, max: 2.33, step: 0.01 },
+        }),
+        'Efectos Avanzados': folder({
+            transmission: { value: 0, min: 0, max: 1, step: 0.01 },
+            thickness: { value: 0, min: 0, max: 5 },
+            clearcoat: { value: 0, min: 0, max: 1, step: 0.01 },
+            clearcoatRoughness: { value: 0, min: 0, max: 1, step: 0.01 },
+        }),
+    }, { render: (get) => get('Tipo de Renderizado.materialType') === 'physical' }); // Ocultar si no es físico
+
 
     const materialProps = useControls({
         'Material Base': folder({
@@ -195,7 +260,7 @@ export default function ChichenItzaLab() {
                 <Stats className="absolute top-4 right-4 z-[100]" />
 
                 <Canvas gl={{ antialias: true, logarithmicDepthBuffer: true }}>
-                    <MaterialViz materialKey={materialKey} materialProps={materialProps} />
+                    <MaterialViz materialKey={materialKey} materialProps={materialProps} materialType={materialType} physicalProps={physicalProps} />
                 </Canvas>
             </div>
         </div>
