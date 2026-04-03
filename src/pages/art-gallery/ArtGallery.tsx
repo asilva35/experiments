@@ -751,13 +751,13 @@ function ArtworkPanel({
                     <span style={{ color: '#8a7a5a', fontSize: 10, letterSpacing: 2, textTransform: 'uppercase' }}>Distancia de Inspección</span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                         <span style={{ color: '#c9a84c', fontSize: 10 }}>Faro</span>
-                        <input 
-                            type="range" min="1.8" max="3.8" step="0.1" 
-                            value={zoomDistance} 
+                        <input
+                            type="range" min="1.8" max="3.8" step="0.1"
+                            value={zoomDistance}
                             onChange={(e) => onZoomChange(parseFloat(e.target.value))}
-                            style={{ 
-                                appearance: 'none', width: 200, height: 4, background: 'rgba(201,168,76,0.2)', 
-                                borderRadius: 2, outline: 'none', cursor: 'pointer' 
+                            style={{
+                                appearance: 'none', width: 200, height: 4, background: 'rgba(201,168,76,0.2)',
+                                borderRadius: 2, outline: 'none', cursor: 'pointer'
                             }}
                         />
                         <span style={{ color: '#c9a84c', fontSize: 10 }}>Cerca</span>
@@ -816,36 +816,73 @@ function ArtworkPanel({
 
 // ─── HUD Overlay ──────────────────────────────────────────────────────────────
 
-function HUD({ focusedArtwork }: { focusedArtwork: Artwork | null }) {
+function HUD({
+    focusedArtwork,
+    isPlaying,
+    onToggleMusic
+}: {
+    focusedArtwork: Artwork | null
+    isPlaying: boolean
+    onToggleMusic: () => void
+}) {
     if (focusedArtwork) return null
 
     return (
         <>
-            {/* Controls hint */}
+            {/* Top Bar with Logo and Music */}
             <div style={{
-                position: 'fixed', bottom: 24, right: 24,
+                position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
+                padding: '24px 32px', display: 'flex', justifyContent: 'space-between',
+                alignItems: 'center', pointerEvents: 'none'
+            }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, pointerEvents: 'auto' }}>
+                    <div style={{
+                        color: '#e8d5a0', fontSize: 13, fontFamily: 'Georgia, serif',
+                        letterSpacing: 4, textTransform: 'uppercase',
+                    }}>
+                        Gallery Lumière
+                    </div>
+                    <div style={{ color: '#4d4332', fontSize: 9, letterSpacing: 2, fontWeight: 700 }}>
+                        VIRTUAL EXHIBITION 2026
+                    </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: 16, alignItems: 'center', pointerEvents: 'auto' }}>
+                    <div style={{
+                        color: '#4a3a1a', fontSize: 11, fontFamily: 'monospace',
+                        letterSpacing: 2, textAlign: 'right'
+                    }}>
+                        {ARTWORKS.length} WORKS
+                    </div>
+
+                    <button
+                        onClick={onToggleMusic}
+                        style={{
+                            background: isPlaying ? 'rgba(201,168,76,0.15)' : 'rgba(5,4,10,0.4)',
+                            border: isPlaying ? '1px solid #c9a84c' : '1px solid rgba(255,255,255,0.1)',
+                            color: isPlaying ? '#e8d5a0' : '#4a3a1a',
+                            borderRadius: '50%', width: 44, height: 44,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            cursor: 'pointer', transition: 'all 0.4s cubic-bezier(0.16,1,0.3,1)',
+                            backdropFilter: 'blur(8px)',
+                            fontSize: 18,
+                            boxShadow: isPlaying ? '0 0 25px rgba(201,168,76,0.2)' : 'none'
+                        }}
+                    >
+                        {isPlaying ? '🔊' : '🔇'}
+                    </button>
+                </div>
+            </div>
+
+            {/* Bottom Controls Hint */}
+            <div style={{
+                position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
                 color: '#5a4a2a', fontSize: 11, fontFamily: 'monospace',
-                lineHeight: 1.9, textAlign: 'right', zIndex: 50, pointerEvents: 'none',
+                letterSpacing: 1, zIndex: 50, pointerEvents: 'none',
+                background: 'rgba(5,4,10,0.3)', padding: '8px 20px', borderRadius: 20,
+                backdropFilter: 'blur(4px)'
             }}>
-                Left drag — Orbit &nbsp;|&nbsp; Scroll — Zoom &nbsp;|&nbsp; Right drag — Pan &nbsp;|&nbsp; Click painting — Inspect
-            </div>
-
-            {/* Gallery name watermark */}
-            <div style={{
-                position: 'fixed', top: 24, left: 32,
-                color: '#4a3a1a', fontSize: 13, fontFamily: 'Georgia, serif',
-                letterSpacing: 3, textTransform: 'uppercase', zIndex: 50, pointerEvents: 'none',
-            }}>
-                Gallery Lumière
-            </div>
-
-            {/* Artwork counter */}
-            <div style={{
-                position: 'fixed', top: 24, right: 32,
-                color: '#4a3a1a', fontSize: 11, fontFamily: 'monospace',
-                letterSpacing: 2, zIndex: 50, pointerEvents: 'none',
-            }}>
-                {ARTWORKS.length} WORKS
+                LEFT DRAG: ORBIT &nbsp;·&nbsp; SCROLL: ZOOM &nbsp;·&nbsp; CLICK PAINTING: INSPECT
             </div>
         </>
     )
@@ -857,6 +894,18 @@ export default function ArtGallery() {
     const [focusedArtwork, setFocusedArtwork] = useState<Artwork | null>(null)
     const [currentRoomId, setCurrentRoomId] = useState(0)
     const [zoomDistance, setZoomDistance] = useState(3.8)
+    const [isPlaying, setIsPlaying] = useState(false)
+    const audioRef = useRef<HTMLAudioElement | null>(null)
+
+    const toggleMusic = useCallback(() => {
+        if (!audioRef.current) return
+        if (isPlaying) {
+            audioRef.current.pause()
+        } else {
+            audioRef.current.play().catch(e => console.log("Audio play blocked by browser:", e))
+        }
+        setIsPlaying(!isPlaying)
+    }, [isPlaying])
 
     const config = useControls({
         Room: folder({
@@ -916,22 +965,28 @@ export default function ArtGallery() {
                 gl={{ antialias: true }}
                 style={{ position: 'absolute', inset: 0 }}
             >
-                <Scene 
-                    onFocus={handleFocus} 
-                    config={config} 
-                    focusedArtwork={focusedArtwork} 
+                <Scene
+                    onFocus={handleFocus}
+                    config={config}
+                    focusedArtwork={focusedArtwork}
                     currentRoomId={currentRoomId}
                     onMove={handleMove}
                     zoomDistance={zoomDistance}
                 />
             </Canvas>
 
-            <HUD focusedArtwork={focusedArtwork} />
+            <HUD
+                focusedArtwork={focusedArtwork}
+                isPlaying={isPlaying}
+                onToggleMusic={toggleMusic}
+            />
+
+            <audio ref={audioRef} loop src="/music/A_Gentle_Return.mp3" />
 
             {focusedArtwork && (
-                <ArtworkPanel 
-                    artwork={focusedArtwork} 
-                    onClose={handleClose} 
+                <ArtworkPanel
+                    artwork={focusedArtwork}
+                    onClose={handleClose}
                     onNext={handleNext}
                     onPrev={handlePrev}
                     zoomDistance={zoomDistance}
