@@ -5,7 +5,6 @@ import {
     Text,
     useTexture,
     Stats,
-    Html,
 } from '@react-three/drei'
 import { useControls, folder } from 'leva'
 import * as THREE from 'three'
@@ -374,8 +373,8 @@ function ArtworkFrame({
 
             {/* 3D Click Hotspot (Optimized) */}
             <group position={[0, artwork.height / 2 + 0.35, 0.05]}>
-                <mesh 
-                    visible={hovered} 
+                <mesh
+                    visible={hovered}
                     onClick={(e) => {
                         e.stopPropagation()
                         onFocus(artwork)
@@ -528,7 +527,7 @@ function HallwayPulse({ position, onClick, label }: { position: [number, number,
                 <ringGeometry args={[0.8, 1, 32]} />
                 <meshBasicMaterial color="#c9a84c" transparent opacity={hovered ? 0.8 : 0.3} side={THREE.DoubleSide} />
             </mesh>
-            
+
             <Text
                 position={[0, 1.5, 0]}
                 fontSize={0.4}
@@ -555,12 +554,14 @@ function Scene({
     focusedArtwork,
     currentRoomId,
     onMove,
+    zoomDistance,
 }: {
     onFocus: (a: Artwork | null) => void
     config: any
     focusedArtwork: Artwork | null
     currentRoomId: number
     onMove: (roomId: number) => void
+    zoomDistance: number
 }) {
     const controlsRef = useRef<any>(null)
     const currentRoom = ROOMS.find(r => r.id === currentRoomId)!
@@ -584,13 +585,12 @@ function Scene({
                 lastCameraState.current.target.copy(controlsRef.current.target)
                 lastCameraState.current.saved = true
             }
-
-            const dist = 3.8
+            // Calculate front position
             const rotY = focusedArtwork.rotation[1]
             const targetPos = new THREE.Vector3(
-                focusedArtwork.position[0] + Math.sin(rotY) * dist,
+                focusedArtwork.position[0] + Math.sin(rotY) * zoomDistance,
                 focusedArtwork.position[1],
-                focusedArtwork.position[2] + Math.cos(rotY) * dist
+                focusedArtwork.position[2] + Math.cos(rotY) * zoomDistance
             )
             const targetLookAt = new THREE.Vector3(...focusedArtwork.position)
 
@@ -680,11 +680,15 @@ function ArtworkPanel({
     onClose,
     onNext,
     onPrev,
+    zoomDistance,
+    onZoomChange,
 }: {
     artwork: Artwork
     onClose: () => void
     onNext: () => void
     onPrev: () => void
+    zoomDistance: number
+    onZoomChange: (val: number) => void
 }) {
     return (
         <div
@@ -742,7 +746,26 @@ function ArtworkPanel({
                 </div>
             </div>
 
-            <p style={{ margin: 0, color: '#c0ad8a', fontSize: 15, maxWidth: 500, lineHeight: 1.6, flex: 1 }}>
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 24, justifyContent: 'center' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'center' }}>
+                    <span style={{ color: '#8a7a5a', fontSize: 10, letterSpacing: 2, textTransform: 'uppercase' }}>Distancia de Inspección</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <span style={{ color: '#c9a84c', fontSize: 10 }}>Faro</span>
+                        <input 
+                            type="range" min="1.8" max="3.8" step="0.1" 
+                            value={zoomDistance} 
+                            onChange={(e) => onZoomChange(parseFloat(e.target.value))}
+                            style={{ 
+                                appearance: 'none', width: 200, height: 4, background: 'rgba(201,168,76,0.2)', 
+                                borderRadius: 2, outline: 'none', cursor: 'pointer' 
+                            }}
+                        />
+                        <span style={{ color: '#c9a84c', fontSize: 10 }}>Cerca</span>
+                    </div>
+                </div>
+            </div>
+
+            <p style={{ margin: 0, color: '#c0ad8a', fontSize: 14, maxWidth: 300, lineHeight: 1.5, display: 'none' }}>
                 {artwork.description}
             </p>
 
@@ -833,6 +856,7 @@ function HUD({ focusedArtwork }: { focusedArtwork: Artwork | null }) {
 export default function ArtGallery() {
     const [focusedArtwork, setFocusedArtwork] = useState<Artwork | null>(null)
     const [currentRoomId, setCurrentRoomId] = useState(0)
+    const [zoomDistance, setZoomDistance] = useState(3.8)
 
     const config = useControls({
         Room: folder({
@@ -857,11 +881,18 @@ export default function ArtGallery() {
 
     const handleFocus = useCallback((artwork: Artwork | null) => {
         setFocusedArtwork(artwork)
+        if (!artwork) setZoomDistance(3.8)
     }, [])
 
     const handleMove = useCallback((roomId: number) => {
         setCurrentRoomId(roomId)
         setFocusedArtwork(null)
+        setZoomDistance(3.8)
+    }, [])
+
+    const handleClose = useCallback(() => {
+        setFocusedArtwork(null)
+        setZoomDistance(3.8)
     }, [])
 
     const handleNext = useCallback(() => {
@@ -885,23 +916,26 @@ export default function ArtGallery() {
                 gl={{ antialias: true }}
                 style={{ position: 'absolute', inset: 0 }}
             >
-                <Scene
-                    onFocus={handleFocus}
-                    config={config}
-                    focusedArtwork={focusedArtwork}
+                <Scene 
+                    onFocus={handleFocus} 
+                    config={config} 
+                    focusedArtwork={focusedArtwork} 
                     currentRoomId={currentRoomId}
                     onMove={handleMove}
+                    zoomDistance={zoomDistance}
                 />
             </Canvas>
 
             <HUD focusedArtwork={focusedArtwork} />
 
             {focusedArtwork && (
-                <ArtworkPanel
-                    artwork={focusedArtwork}
-                    onClose={() => setFocusedArtwork(null)}
+                <ArtworkPanel 
+                    artwork={focusedArtwork} 
+                    onClose={handleClose} 
                     onNext={handleNext}
                     onPrev={handlePrev}
+                    zoomDistance={zoomDistance}
+                    onZoomChange={setZoomDistance}
                 />
             )}
         </div>
