@@ -372,14 +372,23 @@ function ArtworkFrame({
                 <meshMatcapMaterial matcap={matcapBlack} color={plaqueColor} />
             </mesh>
 
-            {/* Click Indicator */}
-            <Html position={[0, artwork.height / 2 + 0.35, 0.05]} center>
-                <div style={{
-                    width: 12, height: 12, borderRadius: '50%', background: '#c9a84c', 
-                    boxShadow: '0 0 10px #c9a84c', border: '2px solid white',
-                    opacity: 0.8, cursor: 'pointer'
-                }} />
-            </Html>
+            {/* 3D Click Hotspot (Optimized) */}
+            <group position={[0, artwork.height / 2 + 0.35, 0.05]}>
+                <mesh 
+                    visible={hovered} 
+                    onClick={(e) => {
+                        e.stopPropagation()
+                        onFocus(artwork)
+                    }}
+                >
+                    <sphereGeometry args={[0.08, 16, 16]} />
+                    <meshBasicMaterial color="#c9a84c" />
+                </mesh>
+                <mesh scale={[1.4, 1.4, 1.4]} visible={hovered}>
+                    <sphereGeometry args={[0.08, 16, 16]} />
+                    <meshBasicMaterial color="#c9a84c" transparent opacity={0.3} />
+                </mesh>
+            </group>
             <Text
                 position={[0, -(artwork.height / 2) - 0.19, 0.03]}
                 fontSize={0.07}
@@ -432,10 +441,10 @@ function Room({
                 </>
             )}
             {data.id !== 0 && (
-                <HallwayPulse 
-                    position={[data.id === 1 ? 8 : -8, 0.1, 0]} 
-                    label="↩ Back to Main Hall" 
-                    onClick={() => onMove(0)} 
+                <HallwayPulse
+                    position={[data.id === 1 ? 8 : -8, 0.1, 0]}
+                    label="↩ Back to Main Hall"
+                    onClick={() => onMove(0)}
                 />
             )}
 
@@ -506,28 +515,30 @@ function Room({
 
 function HallwayPulse({ position, onClick, label }: { position: [number, number, number], onClick: () => void, label: string }) {
     const meshRef = useRef<THREE.Mesh>(null)
+    const [hovered, setHovered] = useState(false)
+
     useFrame(({ clock }) => {
         if (!meshRef.current) return
         const s = 1 + Math.sin(clock.getElapsedTime() * 4) * 0.2
         meshRef.current.scale.set(s, 1, s)
     })
     return (
-        <group position={position} onClick={onClick}>
+        <group position={position} onClick={onClick} onPointerOver={() => setHovered(true)} onPointerOut={() => setHovered(false)}>
             <mesh ref={meshRef} rotation={[-Math.PI / 2, 0, 0]}>
                 <ringGeometry args={[0.8, 1, 32]} />
-                <meshBasicMaterial color="#c9a84c" transparent opacity={0.6} side={THREE.DoubleSide} />
+                <meshBasicMaterial color="#c9a84c" transparent opacity={hovered ? 0.8 : 0.3} side={THREE.DoubleSide} />
             </mesh>
-            <Html center position={[0, 1.2, 0]}>
-                <div style={{
-                    color: '#f0e5c5', background: 'rgba(5,4,10,0.92)', padding: '10px 24px',
-                    borderRadius: 30, whiteSpace: 'nowrap', border: '2px solid #c9a84c', 
-                    cursor: 'pointer', fontSize: 16, fontWeight: 700, letterSpacing: 1,
-                    boxShadow: '0 0 25px rgba(201,168,76,0.3)',
-                    fontFamily: 'monospace', textTransform: 'uppercase'
-                }}>
-                    {label}
-                </div>
-            </Html>
+            
+            <Text
+                position={[0, 1.5, 0]}
+                fontSize={0.4}
+                color="#c9a84c"
+                maxWidth={4}
+                textAlign="center"
+                anchorY="bottom"
+            >
+                {label}
+            </Text>
         </group>
     )
 }
@@ -553,17 +564,20 @@ function Scene({
 }) {
     const controlsRef = useRef<any>(null)
     const currentRoom = ROOMS.find(r => r.id === currentRoomId)!
-    
+
     const lastCameraState = useRef({
         position: new THREE.Vector3(0, 4, 12),
         target: new THREE.Vector3(0, 1.8, 0),
         saved: false
     })
+    const lastRoomId = useRef(currentRoomId)
+    const isRoomTransitioning = useRef(false)
 
     useFrame((state) => {
         if (!controlsRef.current) return
 
         if (focusedArtwork) {
+            // Inspecting mode: Fully locked
             controlsRef.current.enabled = false
             if (!lastCameraState.current.saved) {
                 lastCameraState.current.position.copy(state.camera.position)
@@ -584,28 +598,39 @@ function Scene({
             controlsRef.current.target.lerp(targetLookAt, 0.1)
             controlsRef.current.update()
         } else {
-            // General room navigation
+            // Detect Room Change
+            if (lastRoomId.current !== currentRoomId) {
+                isRoomTransitioning.current = true
+                lastRoomId.current = currentRoomId
+            }
+
             const targetCenter = new THREE.Vector3(...currentRoom.position).add(new THREE.Vector3(0, 1.8, 0))
             const targetCamPos = new THREE.Vector3(...currentRoom.position).add(new THREE.Vector3(0, 4, 12))
 
             if (lastCameraState.current.saved) {
-                // Return from artwork
+                // Returning from inspection: temporary lock
+                controlsRef.current.enabled = false
                 state.camera.position.lerp(lastCameraState.current.position, 0.1)
                 controlsRef.current.target.lerp(lastCameraState.current.target, 0.1)
+                controlsRef.current.update()
                 if (state.camera.position.distanceTo(lastCameraState.current.position) < 0.1) {
                     lastCameraState.current.saved = false
                     controlsRef.current.enabled = true
                 }
-            } else {
-                // Room transition or free movement
-                controlsRef.current.target.lerp(targetCenter, 0.05)
-                // Only force camera pos if room changed significantly
-                if (state.camera.position.distanceTo(new THREE.Vector3(...currentRoom.position)) > 40) {
-                     state.camera.position.lerp(targetCamPos, 0.05)
+            } else if (isRoomTransitioning.current) {
+                // Moving between rooms: temporary lock
+                controlsRef.current.enabled = false
+                state.camera.position.lerp(targetCamPos, 0.08)
+                controlsRef.current.target.lerp(targetCenter, 0.1)
+                controlsRef.current.update()
+                if (state.camera.position.distanceTo(targetCamPos) < 0.5) {
+                    isRoomTransitioning.current = false
+                    controlsRef.current.enabled = true
                 }
+            } else {
+                // PURE FREEDOM: No lerp, let OrbitControls handle everything
                 controlsRef.current.enabled = true
             }
-            controlsRef.current.update()
         }
     })
 
@@ -613,12 +638,12 @@ function Scene({
         <>
             <Stats />
             <color attach="background" args={['#05040a']} />
-            
+
             {ROOMS.map(room => (
                 <Room key={room.id} data={room} config={config} onMove={onMove} />
             ))}
 
-            {ARTWORKS.map((aw) => (
+            {ARTWORKS.filter(a => a.roomId === currentRoomId).map((aw) => (
                 <ArtworkFrame
                     key={aw.id}
                     artwork={aw}
@@ -819,7 +844,7 @@ export default function ArtGallery() {
             ceilColor: { value: '#ffffff', label: 'Ceiling Color' },
             accentMatcap: { value: MATCAP_OPTIONS['Gold'], options: MATCAP_OPTIONS, label: 'Accents' },
             accentColor: { value: '#ffffff', label: 'Accent Color' },
-        }),
+        }, { collapsed: true }),
         Artwork: folder({
             frameMatcap: { value: MATCAP_OPTIONS['Gold'], options: MATCAP_OPTIONS, label: 'Frames' },
             frameColor: { value: '#ffffff', label: 'Frame Color' },
@@ -827,7 +852,7 @@ export default function ArtGallery() {
             paintingColor: { value: '#ffffff', label: 'Painting Color' },
             plaqueMatcap: { value: MATCAP_OPTIONS['Plastic Black'], options: MATCAP_OPTIONS, label: 'Plaques' },
             plaqueColor: { value: '#ffffff', label: 'Plaque Color' },
-        }),
+        }, { collapsed: true }),
     })
 
     const handleFocus = useCallback((artwork: Artwork | null) => {
@@ -860,10 +885,10 @@ export default function ArtGallery() {
                 gl={{ antialias: true }}
                 style={{ position: 'absolute', inset: 0 }}
             >
-                <Scene 
-                    onFocus={handleFocus} 
-                    config={config} 
-                    focusedArtwork={focusedArtwork} 
+                <Scene
+                    onFocus={handleFocus}
+                    config={config}
+                    focusedArtwork={focusedArtwork}
                     currentRoomId={currentRoomId}
                     onMove={handleMove}
                 />
@@ -872,9 +897,9 @@ export default function ArtGallery() {
             <HUD focusedArtwork={focusedArtwork} />
 
             {focusedArtwork && (
-                <ArtworkPanel 
-                    artwork={focusedArtwork} 
-                    onClose={() => setFocusedArtwork(null)} 
+                <ArtworkPanel
+                    artwork={focusedArtwork}
+                    onClose={() => setFocusedArtwork(null)}
                     onNext={handleNext}
                     onPrev={handlePrev}
                 />
