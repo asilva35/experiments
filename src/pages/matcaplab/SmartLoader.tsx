@@ -13,11 +13,14 @@ const matcapTextures = {
     plasticBlack: '/textures/matcaps/plastic-black.png',
     leatherGray: '/textures/matcaps/leather-gray.png',
     leatherBlack: '/textures/matcaps/leather-black.png',
+    mateGray: '/textures/matcaps/mate-gray.png',
+    mateWhite: '/textures/matcaps/mate-white.png',
+    brillantBlue: '/textures/matcaps/brillant-blue.png',
 };
 
 function SmartChichenItza() {
     // 💡 Cargamos el modelo que ya tiene los userData inyectados
-    const { scene } = useGLTF('/models/gltf/electric-bike-edited.glb');
+    const { scene } = useGLTF('/models/gltf/sports_bike_edited.glb?v=0.1');
     const textures = useTexture(matcapTextures);
 
     // Pool de materiales para asignar según el metadato
@@ -34,15 +37,28 @@ function SmartChichenItza() {
     useLayoutEffect(() => {
         scene.traverse((node: any) => {
             if (node.isMesh) {
-                // 💡 REVISAR METADATOS:
-                // Si el mesh tiene el metadato 'matcap', usamos ese. Si no, default a plástico.
-                const savedMatcap = node.userData.matcap;
-                console.log(node.name, node.userData);
-                if (savedMatcap && materialPool[savedMatcap]) {
-                    node.material = materialPool[savedMatcap];
+                const { matcap, color, transparent, opacity } = node.userData;
+
+                console.log(node.name, { matcap, color, transparent, opacity });
+
+                const matKey = matcap || 'plasticWhite';
+                const baseMat = materialPool[matKey] || materialPool['plasticWhite'];
+
+                // Clonamos para que cada mesh pueda tener su propio color/opacidad
+                const newMat = baseMat.clone();
+
+                if (color) {
+                    newMat.color.set(color);
                 } else {
-                    node.material = materialPool['plasticWhite'];
+                    newMat.color.set('#ffffff'); // Asegurar que no sea negro por defecto
                 }
+                newMat.transparent = transparent ?? false;
+                newMat.opacity = opacity ?? 1;
+
+                newMat.fog = true;
+                newMat.needsUpdate = true;
+
+                node.material = newMat;
             }
         });
     }, [scene, materialPool]);
@@ -59,8 +75,8 @@ export default function SmartLoaderExperiment() {
         <div className="w-full h-screen bg-[#050505] relative">
             <Stats className="absolute top-0 left-0 z-50" />
 
-            <Canvas dpr={[1, 2]} camera={{ position: [12, 10, 12], fov: 35 }}>
-                <color attach="background" args={['#f3f3f3ff']} />
+            <Canvas dpr={[1, 2]} camera={{ position: [10, 8, 12], fov: 40 }}>
+                <color attach="background" args={['#0a0000ff']} />
                 {/* <fog attach="fog" args={['#050505', 10, 50]} /> */}
 
                 <OrbitControls makeDefault />

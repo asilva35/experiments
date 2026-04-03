@@ -1,6 +1,6 @@
-import { Suspense, useMemo, useState, useLayoutEffect, useEffect, useRef } from 'react';
+import { Suspense, useState, useLayoutEffect, useEffect, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, useGLTF, Html, Stats, Float, useTexture, Center } from '@react-three/drei';
+import { OrbitControls, useGLTF, Html, Stats, useTexture, Center } from '@react-three/drei';
 import { useControls, folder, button } from 'leva';
 import * as THREE from 'three';
 import type { GLTF } from 'three-stdlib'
@@ -21,41 +21,56 @@ const matcapTextures = {
     plasticBlack: '/textures/matcaps/plastic-black.png',
     leatherGray: '/textures/matcaps/leather-gray.png',
     leatherBlack: '/textures/matcaps/leather-black.png',
+    mateGray: '/textures/matcaps/mate-gray.png',
+    mateWhite: '/textures/matcaps/mate-white.png',
+    brillantBlue: '/textures/matcaps/brillant-blue.png',
 };
 
 // --- COMPONENTE DEL MODELO DINÁMICO ---
 function DynamicModel({ url, meshConfigs, fog }: any) {
     const { scene } = useGLTF(url) as GLTFResult
     const textures = useTexture(matcapTextures);
-
-    // Creamos un pool de materiales para no duplicar en memoria
-    const materialPool = useMemo(() => {
-        const pools: any = {};
-        Object.keys(matcapTextures).forEach((key) => {
-            const tex = textures[key as keyof typeof textures];
-            tex.colorSpace = THREE.SRGBColorSpace;
-            pools[key] = new THREE.MeshMatcapMaterial({
-                matcap: tex,
-                fog: fog,
-                transparent: true
-            });
-        });
-        return pools;
-    }, [textures, fog]);
+    const materialsRef = useRef<Record<string, THREE.MeshMatcapMaterial>>({});
 
     useLayoutEffect(() => {
         scene.traverse((node: any) => {
             if (node.isMesh) {
-                // Buscamos si hay una configuración para este mesh específico
-                const matKey = meshConfigs[node.name] || 'plasticWhite';
-                node.userData.matcap = matKey;
-                node.material = materialPool[matKey];
-                node.material.needsUpdate = true;
+                const config = meshConfigs[node.name] || {
+                    matcap: 'plasticWhite',
+                    color: '#ffffff',
+                    transparent: false,
+                    opacity: 1
+                };
+                const { matcap, color, transparent, opacity } = config;
+
+                // Si no existe el material para este mesh, lo creamos
+                if (!materialsRef.current[node.name]) {
+                    materialsRef.current[node.name] = new THREE.MeshMatcapMaterial();
+                }
+
+                const mat = materialsRef.current[node.name];
+                const tex = textures[matcap as keyof typeof textures];
+                if (tex) {
+                    tex.colorSpace = THREE.SRGBColorSpace;
+                    mat.matcap = tex;
+                }
+
+                mat.color.set(color);
+                mat.transparent = transparent;
+                mat.opacity = opacity;
+                mat.fog = fog;
+                mat.needsUpdate = true;
+
+                node.material = mat;
+                node.userData.matcap = matcap;
+                node.userData.color = color;
+                node.userData.transparent = transparent;
+                node.userData.opacity = opacity;
                 node.castShadow = false;
                 node.receiveShadow = false;
             }
         });
-    }, [scene, meshConfigs, materialPool]);
+    }, [scene, meshConfigs, textures, fog]);
 
     return (
         <Center top>
@@ -65,10 +80,16 @@ function DynamicModel({ url, meshConfigs, fog }: any) {
 }
 
 export default function MatcapComposer() {
-    //const [modelUrl, setModelUrl] = useState('/models/gltf/chichen-itza.glb');
-    const modelUrl = '/models/gltf/electric-bike.glb';
+    const modelUrl = '/models/gltf/sports_bike.glb';
     const [meshList, setMeshList] = useState<string[]>([]);
-    const [meshConfigs, setMeshConfigs] = useState<Record<string, string>>({});
+    type MeshConfig = {
+        matcap: string;
+        color: string;
+        transparent: boolean;
+        opacity: number;
+    };
+
+    const [meshConfigs, setMeshConfigs] = useState<Record<string, MeshConfig>>({});
 
     // 💡 REFERENCIA CRÍTICA: Para que el exportador siempre vea el dato real
     const configRef = useRef(meshConfigs);
@@ -91,7 +112,12 @@ export default function MatcapComposer() {
         setMeshConfigs(prev => {
             const next = { ...prev };
             uniqueNames.forEach(name => {
-                if (!next[name]) next[name] = 'plasticWhite';
+                if (!next[name]) next[name] = {
+                    matcap: 'plasticWhite',
+                    color: '#ffffff',
+                    transparent: false,
+                    opacity: 1
+                };
             });
             return next;
         });
@@ -106,20 +132,62 @@ export default function MatcapComposer() {
     });
 
     // Controles dinámicos para cada Mesh detectado
-    useControls('Materiales por Mesh', () => {
+    const [, setControls] = useControls('Materiales por Mesh', () => {
         const controls: any = {};
         meshList.forEach((name) => {
-            controls[name] = {
-                value: meshConfigs[name] || 'plasticWhite',
-                options: Object.keys(matcapTextures),
-                onChange: (value: string) => {
-                    // Solo actualizamos si el valor realmente cambió
-                    setMeshConfigs(prev => {
-                        if (prev[name] === value) return prev;
-                        return { ...prev, [name]: value };
-                    });
+            controls[name] = folder({
+                [`matcap_${name}`]: {
+                    label: 'Matcap',
+                    value: meshConfigs[name]?.matcap || 'plasticWhite',
+                    options: Object.keys(matcapTextures),
+                    onChange: (value: string) => {
+                        setMeshConfigs(prev => {
+                            const current = prev[name] || { matcap: 'plasticWhite', color: '#ffffff', transparent: false, opacity: 1 };
+                            if (current.matcap === value) return prev;
+                            return {
+                                ...prev,
+                                [name]: { ...current, matcap: value }
+                            };
+                        });
+                    }
+                },
+                [`color_${name}`]: {
+                    label: 'Color',
+                    value: meshConfigs[name]?.color || '#ffffff',
+                    onChange: (value: string) => {
+                        setMeshConfigs(prev => {
+                            const current = prev[name] || { matcap: 'plasticWhite', color: '#ffffff', transparent: false, opacity: 1 };
+                            if (current.color === value) return prev;
+                            return { ...prev, [name]: { ...current, color: value } };
+                        });
+                    }
+                },
+                [`transparent_${name}`]: {
+                    label: 'Transparent',
+                    value: meshConfigs[name]?.transparent ?? false,
+                    onChange: (value: boolean) => {
+                        setMeshConfigs(prev => {
+                            const current = prev[name] || { matcap: 'plasticWhite', color: '#ffffff', transparent: false, opacity: 1 };
+                            if (current.transparent === value) return prev;
+                            return { ...prev, [name]: { ...current, transparent: value } };
+                        });
+                    }
+                },
+                [`opacity_${name}`]: {
+                    label: 'Opacity',
+                    value: meshConfigs[name]?.opacity ?? 1,
+                    min: 0,
+                    max: 1,
+                    step: 0.01,
+                    onChange: (value: number) => {
+                        setMeshConfigs(prev => {
+                            const current = prev[name] || { matcap: 'plasticWhite', color: '#ffffff', transparent: false, opacity: 1 };
+                            if (current.opacity === value) return prev;
+                            return { ...prev, [name]: { ...current, opacity: value } };
+                        });
+                    }
                 }
-            };
+            }, { collapsed: true });
         });
         return controls;
     }, [meshList]);
@@ -151,9 +219,20 @@ export default function MatcapComposer() {
                         const imported = JSON.parse(event.target.result);
                         if (imported.meshConfigs) {
                             setMeshConfigs(imported.meshConfigs);
+                            // Object.keys(imported.meshConfigs).forEach((name) => {
+                            //     const config = imported.meshConfigs[name];
+                            //     console.log(name, config);
+                            //     setControls({
+                            //         [`matcap_${name}`]: config.matcap,
+                            //         [`color_${name}`]: config.color,
+                            //         [`transparent_${name}`]: config.transparent,
+                            //         [`opacity_${name}`]: config.opacity
+                            //     });
+                            // });
                         }
-                    } catch (err) {
+                    } catch (err: any) {
                         alert("Error al leer el archivo JSON");
+                        console.log(err.message);
                     }
                 };
                 reader.readAsText(file);
@@ -166,13 +245,20 @@ export default function MatcapComposer() {
             // 💡 PASO 1: Inyectar la configuración en el userData de cada mesh
             scene.traverse((node: any) => {
                 if (node.isMesh) {
-                    if (!node.userData.matcap) {
-                        node.userData.matcap = meshConfigs[node.name] || 'plasticWhite';
-                    }
+                    const config = configRef.current[node.name] || {
+                        matcap: 'plasticWhite',
+                        color: '#ffffff',
+                        transparent: false,
+                        opacity: 1
+                    };
+                    node.userData.matcap = config.matcap;
+                    node.userData.color = config.color;
+                    node.userData.transparent = config.transparent;
+                    node.userData.opacity = config.opacity;
                 }
             });
 
-            // 💡 PASO 2: Exportar el binario
+            // Export Compressed
             exporter.parse(
                 scene,
                 (result: any) => {
@@ -198,15 +284,13 @@ export default function MatcapComposer() {
 
                 <OrbitControls makeDefault />
 
-                <Float speed={0.5} rotationIntensity={0.1}>
-                    <Suspense fallback={<Html center>Cargando Modelo...</Html>}>
-                        <DynamicModel
-                            url={modelUrl}
-                            meshConfigs={meshConfigs}
-                            fog={activeFog}
-                        />
-                    </Suspense>
-                </Float>
+                <Suspense fallback={<Html center>Cargando Modelo...</Html>}>
+                    <DynamicModel
+                        url={modelUrl}
+                        meshConfigs={meshConfigs}
+                        fog={activeFog}
+                    />
+                </Suspense>
             </Canvas>
 
             {/* UI Overlay */}

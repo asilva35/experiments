@@ -17,11 +17,13 @@ import Materials from './pages/materials/Materials'
 import MatcapLab from './pages/matcaplab/MatcapLab'
 import MatcapComposer from './pages/matcaplab/MatcapComposer'
 import SmartLoader from './pages/matcaplab/SmartLoader'
+import RealEstateDashboard from './pages/real-estate-insights/RealEstateDashboard'
+import ArtGallery from './pages/art-gallery/ArtGallery'
 
 
 // Un componente simple para la página de inicio o selección
 const Home = () => (
-  <div className="p-20 text-white font-mono bg-slate-900 h-screen">
+  <div className="p-20 text-white font-mono bg-slate-900">
     <h1 className="text-3xl mb-8 border-b border-slate-800 pb-4">Projects</h1>
     <nav className="flex flex-col gap-4">
       <Link to="/stress-materials" className="text-cyan-400 hover:text-cyan-300 transition-colors flex items-center gap-2">
@@ -78,6 +80,12 @@ const Home = () => (
       <Link to="/smartloader" className="text-emerald-500 hover:text-emerald-400 transition-colors flex items-center gap-2">
         <span className="opacity-50">/18</span> Smart Loader
       </Link>
+      <Link to="/real-estate-dashboard" className="text-emerald-500 hover:text-emerald-400 transition-colors flex items-center gap-2">
+        <span className="opacity-50">/19</span> Real Estate Dashboard
+      </Link>
+      <Link to="/art-gallery" className="text-amber-400 hover:text-amber-300 transition-colors flex items-center gap-2">
+        <span className="opacity-50">/20</span> Art Gallery 3D
+      </Link>
 
     </nav>
   </div>
@@ -106,6 +114,8 @@ export default function App() {
         <Route path="/matcaplab" element={<MatcapLab />} />
         <Route path="/matcapcomposer" element={<MatcapComposer />} />
         <Route path="/smartloader" element={<SmartLoader />} />
+        <Route path="/real-estate-dashboard" element={<RealEstateDashboard />} />
+        <Route path="/art-gallery" element={<ArtGallery />} />
       </Routes>
     </BrowserRouter>
   )
