@@ -4,6 +4,8 @@ import {
     OrbitControls,
     Text,
     useTexture,
+    Stats,
+    Html,
 } from '@react-three/drei'
 import { useControls, folder } from 'leva'
 import * as THREE from 'three'
@@ -22,7 +24,21 @@ interface Artwork {
     height: number
     colors: string[]
     style: 'abstract' | 'landscape' | 'portrait' | 'geometric' | 'impressionist'
+    roomId: number
 }
+
+interface RoomData {
+    id: number
+    name: string
+    position: [number, number, number]
+    color: string
+}
+
+const ROOMS: RoomData[] = [
+    { id: 0, name: 'Main Hall', position: [0, 0, 0], color: '#ffffff' },
+    { id: 1, name: 'West Wing', position: [-25, 0, 0], color: '#a0c4ff' },
+    { id: 2, name: 'East Wing', position: [25, 0, 0], color: '#ffd6a5' },
+]
 
 // ─── Painting Texture Generator ──────────────────────────────────────────────
 
@@ -233,79 +249,64 @@ const MATCAP_OPTIONS = {
 }
 
 const ARTWORKS: Artwork[] = [
-    // Main Hall - North wall
+    // Room 0 - Main Hall
     {
         id: 1, title: 'Eternal Cosmos', artist: 'Elena Vasquez', year: '2021',
-        description: 'A journey through the infinite universe, where matter and energy dance in perfect harmony.',
+        description: 'A journey through the infinite universe.',
         position: [0, 2.2, -9.7], rotation: [0, 0, 0], width: 3, height: 2,
-        colors: ['#0a0a2e', '#1a1a5e', '#6a0dad', '#ff6b6b', '#ffd700'],
-        style: 'abstract'
+        colors: ['#0a0a2e', '#1a1a5e', '#ffd700'], style: 'abstract', roomId: 0
     },
     {
         id: 2, title: 'Crimson Fields', artist: 'James Thornton', year: '2019',
-        description: 'Inspired by the vast poppy fields of Flanders, a meditation on beauty and loss.',
+        description: 'Meditation on beauty and loss.',
         position: [-4, 2.2, -9.7], rotation: [0, 0, 0], width: 2, height: 2.5,
-        colors: ['#87CEEB', '#4a90d9', '#cc2200', '#8B0000', '#228B22'],
-        style: 'landscape'
+        colors: ['#cc2200', '#8B0000', '#228B22'], style: 'landscape', roomId: 0
     },
     {
-        id: 3, title: 'Lady of the Lake', artist: 'Sofia Mendez', year: '2020',
-        description: 'A timeless portrait capturing the mystery and elegance of the feminine spirit.',
-        position: [4, 2.2, -9.7], rotation: [0, 0, 0], width: 1.8, height: 2.5,
-        colors: ['#2c1810', '#3d2b1f', '#1a3a4a', '#c8956c'],
-        style: 'portrait'
-    },
-    // Main Hall - West wall
-    {
-        id: 4, title: 'Bauhaus Reverie', artist: 'Klaus Müller', year: '2018',
-        description: 'A tribute to the revolutionary Bauhaus movement, exploring form and function.',
+        id: 3, title: 'Bauhaus Reverie', artist: 'Klaus Müller', year: '2018',
+        description: 'Tribute to the Bauhaus movement.',
         position: [-9.7, 2.2, -3], rotation: [0, Math.PI / 2, 0], width: 2.5, height: 2,
-        colors: ['#ffffff', '#ff0000', '#0000ff', '#ffff00', '#000000'],
-        style: 'geometric'
+        colors: ['#ff0000', '#0000ff', '#ffff00'], style: 'geometric', roomId: 0
+    },
+
+    // Room 1 - West Wing
+    {
+        id: 4, title: 'Glacial Bloom', artist: 'Soren Berg', year: '2024',
+        description: 'The cold beauty of a frozen spring.',
+        position: [-25, 2.2, -9.7], rotation: [0, 0, 0], width: 2.5, height: 2.5,
+        colors: ['#e0f7fa', '#80deea', '#00bcd4'], style: 'impressionist', roomId: 1
     },
     {
-        id: 5, title: 'Whispers of Monet', artist: 'Claire Dubois', year: '2022',
-        description: 'An impressionist ode to the water lilies, blurring the line between dream and reality.',
-        position: [-9.7, 2.2, 3], rotation: [0, Math.PI / 2, 0], width: 2.5, height: 1.8,
-        colors: ['#2d5a8e', '#4a8cb5', '#7ec8c8', '#e8d5a3', '#f4a460', '#228b22'],
-        style: 'impressionist'
-    },
-    // Main Hall - East wall
-    {
-        id: 6, title: 'Neon Genesis', artist: 'Yuki Tanaka', year: '2023',
-        description: 'Digital strokes of neon brilliance, a vision of humanity in the cyberpunk age.',
-        position: [9.7, 2.2, -3], rotation: [0, -Math.PI / 2, 0], width: 2.5, height: 2,
-        colors: ['#0d0d1a', '#ff00ff', '#00ffff', '#ff6600', '#9900ff'],
-        style: 'abstract'
+        id: 5, title: 'Night Market', artist: 'Chen Wei', year: '2023',
+        description: 'Vibrant energy of a neon-lit bazaar.',
+        position: [-34.7, 2.2, 0], rotation: [0, Math.PI / 2, 0], width: 3, height: 2,
+        colors: ['#ff4081', '#7b1fa2', '#303f9f'], style: 'abstract', roomId: 1
     },
     {
-        id: 7, title: 'Mediterranean Dusk', artist: 'Marco Ricci', year: '2020',
-        description: 'The last light of day over the Aegean Sea, painted with raw emotion and golden warmth.',
-        position: [9.7, 2.2, 3], rotation: [0, -Math.PI / 2, 0], width: 2.5, height: 1.8,
-        colors: ['#ff6b35', '#f7931e', '#ffcd3c', '#1a5276', '#0e3460'],
-        style: 'landscape'
+        id: 6, title: 'The Silent Watcher', artist: 'Maya Oka', year: '2022',
+        description: 'A figure lost in contemplation.',
+        position: [-25, 2.2, 9.7], rotation: [0, Math.PI, 0], width: 1.8, height: 2.6,
+        colors: ['#212121', '#424242', '#bdbdbd'], style: 'portrait', roomId: 1
     },
-    // Wing B - South area
+
+    // Room 2 - East Wing
     {
-        id: 8, title: 'The Architect', artist: 'Anya Petrova', year: '2017',
-        description: 'A study in structural geometry, where mathematics becomes art.',
-        position: [0, 2.2, 9.7], rotation: [0, Math.PI, 0], width: 3, height: 2,
-        colors: ['#1a1a2e', '#16213e', '#0f3460', '#e94560', '#533483'],
-        style: 'geometric'
-    },
-    {
-        id: 9, title: 'Dreams of Autumn', artist: 'Hiroshi Nakamura', year: '2021',
-        description: 'A haiku in pigment — the fleeting beauty of Japanese autumn leaves.',
-        position: [-4, 2.2, 9.7], rotation: [0, Math.PI, 0], width: 2, height: 2.5,
-        colors: ['#ff8c00', '#ff4500', '#dc143c', '#8b0000', '#2f4f4f'],
-        style: 'impressionist'
+        id: 7, title: 'Solar Flare', artist: 'Amara Okafor', year: '2023',
+        description: 'The raw power of our closest star.',
+        position: [25, 2.2, -9.7], rotation: [0, 0, 0], width: 3, height: 2,
+        colors: ['#ff6f00', '#ffab00', '#ffff00'], style: 'geometric', roomId: 2
     },
     {
-        id: 10, title: 'The Wanderer', artist: 'Léa Fontaine', year: '2019',
-        description: 'A solitary figure against the vast unknown — a search for meaning in the modern age.',
-        position: [4, 2.2, 9.7], rotation: [0, Math.PI, 0], width: 1.8, height: 2.5,
-        colors: ['#34495e', '#2c3e50', '#7f8c8d', '#bdc3c7'],
-        style: 'portrait'
+        id: 8, title: 'Oasis of Light', artist: 'Hassan Aziz', year: '2021',
+        description: 'Finding calm in the heart of the desert.',
+        position: [34.7, 2.2, 0], rotation: [0, -Math.PI / 2, 0], width: 2.2, height: 2.2,
+        colors: ['#ffe082', '#ffb300', '#3e2723'], style: 'landscape', roomId: 2
+    },
+    {
+        id: 9, title: 'Digital Echo', artist: 'Pixel Void', year: '2025',
+        description: 'Fragments of memory in the data stream.',
+        position: [25, 2.2, 9.7], rotation: [0, Math.PI, 0], width: 2.8, height: 1.8,
+        colors: ['#00e676', '#00b0ff', '#6200ea'], style: 'abstract', roomId: 2
     },
 ]
 
@@ -335,9 +336,9 @@ function ArtworkFrame({
     const [hovered, setHovered] = useState(false)
     const texture = useMemo(() => generatePaintingTexture(artwork), [artwork])
 
-    const matcapFrame = useTexture(frameMatcapPath)
-    const matcapWhite = useTexture(whiteMatcapPath)
-    const matcapBlack = useTexture(blackMatcapPath)
+    const matcapFrame = useTexture(frameMatcapPath) as THREE.Texture
+    const matcapWhite = useTexture(whiteMatcapPath) as THREE.Texture
+    const matcapBlack = useTexture(blackMatcapPath) as THREE.Texture
 
     return (
         <group position={artwork.position} rotation={artwork.rotation}>
@@ -370,6 +371,15 @@ function ArtworkFrame({
                 <boxGeometry args={[1.4, 0.22, 0.02]} />
                 <meshMatcapMaterial matcap={matcapBlack} color={plaqueColor} />
             </mesh>
+
+            {/* Click Indicator */}
+            <Html position={[0, artwork.height / 2 + 0.35, 0.05]} center>
+                <div style={{
+                    width: 12, height: 12, borderRadius: '50%', background: '#c9a84c', 
+                    boxShadow: '0 0 10px #c9a84c', border: '2px solid white',
+                    opacity: 0.8, cursor: 'pointer'
+                }} />
+            </Html>
             <Text
                 position={[0, -(artwork.height / 2) - 0.19, 0.03]}
                 fontSize={0.07}
@@ -395,115 +405,129 @@ function ArtworkFrame({
 
 // ─── Gallery Room ─────────────────────────────────────────────────────────────
 
-function GalleryRoom({
-    floorMatcapPath,
-    wallMatcapPath,
-    ceilMatcapPath,
-    accentMatcapPath,
-    floorColor,
-    wallColor,
-    ceilColor,
-    accentColor,
+function Room({
+    data,
+    config,
+    onMove,
 }: {
-    floorMatcapPath: string
-    wallMatcapPath: string
-    ceilMatcapPath: string
-    accentMatcapPath: string
-    floorColor: string
-    wallColor: string
-    ceilColor: string
-    accentColor: string
+    data: RoomData
+    config: any
+    onMove: (roomId: number) => void
 }) {
-    const matcapFloor = useTexture(floorMatcapPath)
-    const matcapWall = useTexture(wallMatcapPath)
-    const matcapCeil = useTexture(ceilMatcapPath)
-    const matcapAccent = useTexture(accentMatcapPath)
-    const matcapWhite = useTexture('/textures/matcaps/mate-white.png')
+    const matcapFloor = useTexture(config.floorMatcap) as THREE.Texture
+    const matcapWall = useTexture(config.wallMatcap) as THREE.Texture
+    const matcapCeil = useTexture(config.ceilMatcap) as THREE.Texture
+    const matcapAccent = useTexture(config.accentMatcap) as THREE.Texture
 
     const W = 20, H = 5.5, D = 20
+    const [x, y, z] = data.position
 
     return (
-        <group>
+        <group position={[x, y, z]}>
+            {/* Pulsing Indicators for Hallways */}
+            {data.id === 0 && (
+                <>
+                    <HallwayPulse position={[-8, 0.1, 0]} label="← West Wing (Impressionism)" onClick={() => onMove(1)} />
+                    <HallwayPulse position={[8, 0.1, 0]} label="East Wing (Modern) →" onClick={() => onMove(2)} />
+                </>
+            )}
+            {data.id !== 0 && (
+                <HallwayPulse 
+                    position={[data.id === 1 ? 8 : -8, 0.1, 0]} 
+                    label="↩ Back to Main Hall" 
+                    onClick={() => onMove(0)} 
+                />
+            )}
+
             {/* Floor */}
             <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
                 <planeGeometry args={[W, D, 1, 1]} />
-                <meshMatcapMaterial matcap={matcapFloor} color={floorColor} />
+                <meshMatcapMaterial matcap={matcapFloor} color={config.floorColor} />
             </mesh>
 
             {/* Ceiling */}
             <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, H, 0]}>
                 <planeGeometry args={[W, D]} />
-                <meshMatcapMaterial matcap={matcapCeil} color={ceilColor} />
+                <meshMatcapMaterial matcap={matcapCeil} color={config.ceilColor} />
             </mesh>
 
+            {/* Walls logic */}
             {/* North wall */}
             <mesh position={[0, H / 2, -D / 2]}>
                 <planeGeometry args={[W, H]} />
-                <meshMatcapMaterial matcap={matcapWall} color={wallColor} />
+                <meshMatcapMaterial matcap={matcapWall} color={config.wallColor} />
             </mesh>
-
             {/* South wall */}
             <mesh rotation={[0, Math.PI, 0]} position={[0, H / 2, D / 2]}>
                 <planeGeometry args={[W, H]} />
-                <meshMatcapMaterial matcap={matcapWall} color={wallColor} />
+                <meshMatcapMaterial matcap={matcapWall} color={config.wallColor} />
             </mesh>
-
-            {/* West wall */}
-            <mesh rotation={[0, Math.PI / 2, 0]} position={[-W / 2, H / 2, 0]}>
-                <planeGeometry args={[D, H]} />
-                <meshMatcapMaterial matcap={matcapWall} color={wallColor} />
-            </mesh>
-
-            {/* East wall */}
-            <mesh rotation={[0, -Math.PI / 2, 0]} position={[W / 2, H / 2, 0]}>
-                <planeGeometry args={[D, H]} />
-                <meshMatcapMaterial matcap={matcapWall} color={wallColor} />
-            </mesh>
+            {/* West wall - only if it's the West Wing boundary */}
+            {data.id === 1 && (
+                <mesh rotation={[0, Math.PI / 2, 0]} position={[-W / 2, H / 2, 0]}>
+                    <planeGeometry args={[D, H]} />
+                    <meshMatcapMaterial matcap={matcapWall} color={config.wallColor} />
+                </mesh>
+            )}
+            {/* East wall - only if it's the East Wing boundary */}
+            {data.id === 2 && (
+                <mesh rotation={[0, -Math.PI / 2, 0]} position={[W / 2, H / 2, 0]}>
+                    <planeGeometry args={[D, H]} />
+                    <meshMatcapMaterial matcap={matcapWall} color={config.wallColor} />
+                </mesh>
+            )}
 
             {/* Baseboard trim */}
             {[
-                { pos: [0, 0.1, -D / 2 + 0.05] as [number, number, number], rot: [0, 0, 0] as [number, number, number], w: W },
-                { pos: [0, 0.1, D / 2 - 0.05] as [number, number, number], rot: [0, Math.PI, 0] as [number, number, number], w: W },
-                { pos: [-W / 2 + 0.05, 0.1, 0] as [number, number, number], rot: [0, Math.PI / 2, 0] as [number, number, number], w: D },
-                { pos: [W / 2 - 0.05, 0.1, 0] as [number, number, number], rot: [0, -Math.PI / 2, 0] as [number, number, number], w: D },
+                { pos: [0, 0.1, -D / 2 + 0.02] as [number, number, number], rot: [0, 0, 0] as [number, number, number], w: W },
+                { pos: [0, 0.1, D / 2 - 0.02] as [number, number, number], rot: [0, Math.PI, 0] as [number, number, number], w: W },
             ].map((b, i) => (
                 <mesh key={`base-${i}`} position={b.pos} rotation={b.rot}>
                     <boxGeometry args={[b.w, 0.2, 0.05]} />
-                    <meshMatcapMaterial matcap={matcapAccent} color={accentColor} />
+                    <meshMatcapMaterial matcap={matcapAccent} color={config.accentColor} />
                 </mesh>
             ))}
 
-            {/* Central bench */}
-            <group position={[0, 0, 0]}>
-                <mesh position={[0, 0.22, 0]}>
-                    <boxGeometry args={[2.5, 0.06, 0.6]} />
-                    <meshMatcapMaterial matcap={matcapAccent} color={accentColor} />
+            {/* Central bench with legs */}
+            <group position={[0, 0.22, 0]}>
+                <mesh>
+                    <boxGeometry args={[3, 0.1, 0.8]} />
+                    <meshMatcapMaterial matcap={matcapAccent} color={config.accentColor} />
                 </mesh>
-                {[-0.9, 0.9].map((x, i) => [
-                    <mesh key={`leg-${i}a`} position={[x, 0.11, -0.22]}>
-                        <boxGeometry args={[0.08, 0.22, 0.06]} />
-                        <meshMatcapMaterial matcap={matcapFloor} color="#111111" />
-                    </mesh>,
-                    <mesh key={`leg-${i}b`} position={[x, 0.11, 0.22]}>
-                        <boxGeometry args={[0.08, 0.22, 0.06]} />
-                        <meshMatcapMaterial matcap={matcapFloor} color="#111111" />
+                {[[-1.2, -0.3], [1.2, -0.3], [-1.2, 0.3], [1.2, 0.3]].map((legPos, i) => (
+                    <mesh key={i} position={[legPos[0], -0.11, legPos[1]]}>
+                        <meshMatcapMaterial matcap={matcapAccent} color="#333333" />
                     </mesh>
-                ])}
+                ))}
             </group>
+        </group>
+    )
+}
 
-            {/* Ceiling chandeliers */}
-            {[[-4, 0, -4], [4, 0, -4], [-4, 0, 4], [4, 0, 4]].map(([x, , z], i) => (
-                <group key={`chandelier-${i}`} position={[x, H - 0.1, z]}>
-                    <mesh>
-                        <cylinderGeometry args={[0.06, 0.06, 0.3, 8]} />
-                        <meshMatcapMaterial matcap={matcapAccent} color={accentColor} />
-                    </mesh>
-                    <mesh position={[0, -0.25, 0]}>
-                        <sphereGeometry args={[0.12, 16, 16]} />
-                        <meshMatcapMaterial matcap={matcapWhite} color={accentColor} />
-                    </mesh>
-                </group>
-            ))}
+function HallwayPulse({ position, onClick, label }: { position: [number, number, number], onClick: () => void, label: string }) {
+    const meshRef = useRef<THREE.Mesh>(null)
+    useFrame(({ clock }) => {
+        if (!meshRef.current) return
+        const s = 1 + Math.sin(clock.getElapsedTime() * 4) * 0.2
+        meshRef.current.scale.set(s, 1, s)
+    })
+    return (
+        <group position={position} onClick={onClick}>
+            <mesh ref={meshRef} rotation={[-Math.PI / 2, 0, 0]}>
+                <ringGeometry args={[0.8, 1, 32]} />
+                <meshBasicMaterial color="#c9a84c" transparent opacity={0.6} side={THREE.DoubleSide} />
+            </mesh>
+            <Html center position={[0, 1.2, 0]}>
+                <div style={{
+                    color: '#f0e5c5', background: 'rgba(5,4,10,0.92)', padding: '10px 24px',
+                    borderRadius: 30, whiteSpace: 'nowrap', border: '2px solid #c9a84c', 
+                    cursor: 'pointer', fontSize: 16, fontWeight: 700, letterSpacing: 1,
+                    boxShadow: '0 0 25px rgba(201,168,76,0.3)',
+                    fontFamily: 'monospace', textTransform: 'uppercase'
+                }}>
+                    {label}
+                </div>
+            </Html>
         </group>
     )
 }
@@ -518,74 +542,81 @@ function Scene({
     onFocus,
     config,
     focusedArtwork,
+    currentRoomId,
+    onMove,
 }: {
     onFocus: (a: Artwork | null) => void
     config: any
     focusedArtwork: Artwork | null
+    currentRoomId: number
+    onMove: (roomId: number) => void
 }) {
     const controlsRef = useRef<any>(null)
+    const currentRoom = ROOMS.find(r => r.id === currentRoomId)!
+    
     const lastCameraState = useRef({
         position: new THREE.Vector3(0, 4, 12),
         target: new THREE.Vector3(0, 1.8, 0),
         saved: false
     })
 
-    useFrame((state, delta) => {
+    useFrame((state) => {
         if (!controlsRef.current) return
 
-        const targetPos = new THREE.Vector3()
-        const targetLookAt = new THREE.Vector3()
-
         if (focusedArtwork) {
-            // Save state once before moving
+            controlsRef.current.enabled = false
             if (!lastCameraState.current.saved) {
                 lastCameraState.current.position.copy(state.camera.position)
                 lastCameraState.current.target.copy(controlsRef.current.target)
                 lastCameraState.current.saved = true
             }
 
-            // Calculate front position based on artwork rotation
             const dist = 3.8
             const rotY = focusedArtwork.rotation[1]
-            targetPos.set(
+            const targetPos = new THREE.Vector3(
                 focusedArtwork.position[0] + Math.sin(rotY) * dist,
                 focusedArtwork.position[1],
                 focusedArtwork.position[2] + Math.cos(rotY) * dist
             )
-            targetLookAt.set(...focusedArtwork.position)
+            const targetLookAt = new THREE.Vector3(...focusedArtwork.position)
+
+            state.camera.position.lerp(targetPos, 0.1)
+            controlsRef.current.target.lerp(targetLookAt, 0.1)
+            controlsRef.current.update()
         } else {
+            // General room navigation
+            const targetCenter = new THREE.Vector3(...currentRoom.position).add(new THREE.Vector3(0, 1.8, 0))
+            const targetCamPos = new THREE.Vector3(...currentRoom.position).add(new THREE.Vector3(0, 4, 12))
+
             if (lastCameraState.current.saved) {
-                targetPos.copy(lastCameraState.current.position)
-                targetLookAt.copy(lastCameraState.current.target)
-                
-                // Reset saved flag when arrived (approx)
-                if (state.camera.position.distanceTo(targetPos) < 0.01) {
+                // Return from artwork
+                state.camera.position.lerp(lastCameraState.current.position, 0.1)
+                controlsRef.current.target.lerp(lastCameraState.current.target, 0.1)
+                if (state.camera.position.distanceTo(lastCameraState.current.position) < 0.1) {
                     lastCameraState.current.saved = false
+                    controlsRef.current.enabled = true
                 }
             } else {
-                return // No move needed
+                // Room transition or free movement
+                controlsRef.current.target.lerp(targetCenter, 0.05)
+                // Only force camera pos if room changed significantly
+                if (state.camera.position.distanceTo(new THREE.Vector3(...currentRoom.position)) > 40) {
+                     state.camera.position.lerp(targetCamPos, 0.05)
+                }
+                controlsRef.current.enabled = true
             }
+            controlsRef.current.update()
         }
-
-        // Smoothly interpolate
-        state.camera.position.lerp(targetPos, 0.1)
-        controlsRef.current.target.lerp(targetLookAt, 0.1)
-        controlsRef.current.update()
     })
 
     return (
         <>
+            <Stats />
             <color attach="background" args={['#05040a']} />
-            <GalleryRoom
-                floorMatcapPath={config.floorMatcap}
-                wallMatcapPath={config.wallMatcap}
-                ceilMatcapPath={config.ceilMatcap}
-                accentMatcapPath={config.accentMatcap}
-                floorColor={config.floorColor}
-                wallColor={config.wallColor}
-                ceilColor={config.ceilColor}
-                accentColor={config.accentColor}
-            />
+            
+            {ROOMS.map(room => (
+                <Room key={room.id} data={room} config={config} onMove={onMove} />
+            ))}
 
             {ARTWORKS.map((aw) => (
                 <ArtworkFrame
@@ -619,7 +650,17 @@ function Scene({
 
 // ─── Artwork Detail Panel ─────────────────────────────────────────────────────
 
-function ArtworkPanel({ artwork, onClose }: { artwork: Artwork; onClose: () => void }) {
+function ArtworkPanel({
+    artwork,
+    onClose,
+    onNext,
+    onPrev,
+}: {
+    artwork: Artwork
+    onClose: () => void
+    onNext: () => void
+    onPrev: () => void
+}) {
     return (
         <div
             style={{
@@ -631,66 +672,96 @@ function ArtworkPanel({ artwork, onClose }: { artwork: Artwork; onClose: () => v
                 background: 'linear-gradient(to top, rgba(5,4,10,0.98) 0%, rgba(5,4,10,0.85) 80%, transparent 100%)',
                 padding: '30px 40px 24px',
                 display: 'flex',
-                alignItems: 'flex-end',
-                gap: 32,
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 40,
                 borderTop: '1px solid rgba(200,169,78,0.2)',
                 animation: 'slideUp 0.4s cubic-bezier(0.16,1,0.3,1)',
             }}
         >
-            {/* Color palette preview */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flexShrink: 0 }}>
-                {artwork.colors.slice(0, 5).map((c, i) => (
-                    <div key={i} style={{ width: 18, height: 18, borderRadius: 4, background: c, border: '1px solid rgba(255,255,255,0.1)' }} />
-                ))}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                <button
+                    onClick={onPrev}
+                    style={{
+                        background: 'rgba(255,255,255,0.05)',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        color: '#c9a84c',
+                        borderRadius: '50%',
+                        width: 48,
+                        height: 48,
+                        cursor: 'pointer',
+                        fontSize: 20,
+                        transition: 'all 0.2s',
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.1)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.05)')}
+                >
+                    ‹
+                </button>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, width: 20 }}>
+                    {artwork.colors.slice(0, 5).map((c, i) => (
+                        <div key={i} style={{ width: 14, height: 14, borderRadius: 3, background: c }} />
+                    ))}
+                </div>
+
+                <div style={{ minWidth: 200 }}>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
+                        <h2 style={{ margin: 0, fontSize: 24, fontWeight: 700, color: '#e8d5a0', fontFamily: 'Georgia, serif' }}>
+                            {artwork.title}
+                        </h2>
+                    </div>
+                    <div style={{ color: '#8a7a5a', fontSize: 13, fontFamily: 'monospace' }}>
+                        {artwork.artist} &nbsp;·&nbsp; {artwork.year}
+                    </div>
+                </div>
             </div>
 
-            <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 16, marginBottom: 6 }}>
-                    <h2 style={{ margin: 0, fontSize: 28, fontWeight: 700, color: '#e8d5a0', letterSpacing: '-0.5px', fontFamily: 'Georgia, serif' }}>
-                        {artwork.title}
-                    </h2>
-                    <span style={{ color: '#c9a84c', fontSize: 13, fontFamily: 'monospace', letterSpacing: 2, textTransform: 'uppercase' }}>
-                        {artwork.style}
-                    </span>
-                </div>
-                <div style={{ color: '#8a7a5a', fontSize: 13, marginBottom: 10, fontFamily: 'monospace' }}>
-                    {artwork.artist} &nbsp;·&nbsp; {artwork.year}
-                </div>
-                <p style={{ margin: 0, color: '#c0ad8a', fontSize: 15, maxWidth: 640, lineHeight: 1.65 }}>
-                    {artwork.description}
-                </p>
-            </div>
+            <p style={{ margin: 0, color: '#c0ad8a', fontSize: 15, maxWidth: 500, lineHeight: 1.6, flex: 1 }}>
+                {artwork.description}
+            </p>
 
-            <button
-                onClick={onClose}
-                style={{
-                    background: 'rgba(200,169,78,0.2)',
-                    border: '1px solid rgba(200,169,78,0.6)',
-                    color: '#f0e5c5',
-                    borderRadius: 8,
-                    padding: '12px 24px',
-                    cursor: 'pointer',
-                    fontSize: 14,
-                    fontWeight: 600,
-                    fontFamily: 'monospace',
-                    letterSpacing: 2,
-                    flexShrink: 0,
-                    transition: 'all 0.2s',
-                    boxShadow: '0 0 15px rgba(200,169,78,0.1)',
-                }}
-                onMouseEnter={e => {
-                    e.currentTarget.style.background = 'rgba(200,169,78,0.3)'
-                    e.currentTarget.style.borderColor = 'rgba(200,169,78,0.8)'
-                    e.currentTarget.style.transform = 'scale(1.05)'
-                }}
-                onMouseLeave={e => {
-                    e.currentTarget.style.background = 'rgba(200,169,78,0.2)'
-                    e.currentTarget.style.borderColor = 'rgba(200,169,78,0.6)'
-                    e.currentTarget.style.transform = 'scale(1)'
-                }}
-            >
-                ← VOLVER A LA GALERÍA
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                <button
+                    onClick={onNext}
+                    style={{
+                        background: 'rgba(255,255,255,0.05)',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        color: '#c9a84c',
+                        borderRadius: '50%',
+                        width: 48,
+                        height: 48,
+                        cursor: 'pointer',
+                        fontSize: 20,
+                        transition: 'all 0.2s',
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.1)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.05)')}
+                >
+                    ›
+                </button>
+
+                <button
+                    onClick={onClose}
+                    style={{
+                        background: 'rgba(200,169,78,0.15)',
+                        border: '1px solid rgba(200,169,78,0.5)',
+                        color: '#f0e5c5',
+                        borderRadius: 8,
+                        padding: '12px 20px',
+                        cursor: 'pointer',
+                        fontSize: 13,
+                        fontWeight: 600,
+                        fontFamily: 'monospace',
+                        letterSpacing: 2,
+                        transition: 'all 0.2s',
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'rgba(200,169,78,0.25)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'rgba(200,169,78,0.15)')}
+                >
+                    ← VOLVER
+                </button>
+            </div>
         </div>
     )
 }
@@ -736,6 +807,7 @@ function HUD({ focusedArtwork }: { focusedArtwork: Artwork | null }) {
 
 export default function ArtGallery() {
     const [focusedArtwork, setFocusedArtwork] = useState<Artwork | null>(null)
+    const [currentRoomId, setCurrentRoomId] = useState(0)
 
     const config = useControls({
         Room: folder({
@@ -762,28 +834,50 @@ export default function ArtGallery() {
         setFocusedArtwork(artwork)
     }, [])
 
+    const handleMove = useCallback((roomId: number) => {
+        setCurrentRoomId(roomId)
+        setFocusedArtwork(null)
+    }, [])
+
+    const handleNext = useCallback(() => {
+        if (!focusedArtwork) return
+        const roomArtworks = ARTWORKS.filter(a => a.roomId === currentRoomId)
+        const idx = roomArtworks.findIndex(a => a.id === focusedArtwork.id)
+        setFocusedArtwork(roomArtworks[(idx + 1) % roomArtworks.length])
+    }, [focusedArtwork, currentRoomId])
+
+    const handlePrev = useCallback(() => {
+        if (!focusedArtwork) return
+        const roomArtworks = ARTWORKS.filter(a => a.roomId === currentRoomId)
+        const idx = roomArtworks.findIndex(a => a.id === focusedArtwork.id)
+        setFocusedArtwork(roomArtworks[(idx - 1 + roomArtworks.length) % roomArtworks.length])
+    }, [focusedArtwork, currentRoomId])
+
     return (
         <div style={{ width: '100vw', height: '100vh', background: '#05040a', overflow: 'hidden', position: 'relative' }}>
-            <style>{`
-        @keyframes slideUp {
-          from { transform: translateY(100%); opacity: 0; }
-          to { transform: translateY(0); opacity: 1; }
-        }
-        * { box-sizing: border-box; }
-      `}</style>
-
             <Canvas
                 camera={{ fov: 75, near: 0.1, far: 100, position: [0, 4, 12] }}
                 gl={{ antialias: true }}
                 style={{ position: 'absolute', inset: 0 }}
             >
-                <Scene onFocus={handleFocus} config={config} focusedArtwork={focusedArtwork} />
+                <Scene 
+                    onFocus={handleFocus} 
+                    config={config} 
+                    focusedArtwork={focusedArtwork} 
+                    currentRoomId={currentRoomId}
+                    onMove={handleMove}
+                />
             </Canvas>
 
             <HUD focusedArtwork={focusedArtwork} />
 
             {focusedArtwork && (
-                <ArtworkPanel artwork={focusedArtwork} onClose={() => setFocusedArtwork(null)} />
+                <ArtworkPanel 
+                    artwork={focusedArtwork} 
+                    onClose={() => setFocusedArtwork(null)} 
+                    onNext={handleNext}
+                    onPrev={handlePrev}
+                />
             )}
         </div>
     )
