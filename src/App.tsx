@@ -20,7 +20,6 @@ import SmartLoader from './pages/matcaplab/SmartLoader'
 import RealEstateDashboard from './pages/real-estate-insights/RealEstateDashboard'
 import ArtGallery from './pages/art-gallery/ArtGallery'
 
-
 // Un componente simple para la página de inicio o selección
 const Home = () => (
   <div className="p-20 text-white font-mono bg-slate-900">
