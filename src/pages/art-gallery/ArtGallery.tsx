@@ -4,6 +4,7 @@ import {
     OrbitControls,
     Text,
     useTexture,
+    useGLTF,
     Stats,
 } from '@react-three/drei'
 import { useControls, folder } from 'leva'
@@ -485,101 +486,35 @@ function GalleryRoom({
     const matcapWall = useTexture(wallMatcapPath)
     const matcapCeil = useTexture(ceilMatcapPath)
     const matcapAccent = useTexture(accentMatcapPath)
-    const matcapWhite = useTexture('/textures/matcaps/mate-white.png')
+    const matcapPlastic = useTexture('/textures/matcaps/plastic-blue.png')
 
-    const W = 100, H = 5.5, D = 100
+    const { scene } = useGLTF('/models/gltf/art-gallery-02.glb')
 
-    return (
-        <group>
-            {/* Floor */}
-            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
-                <planeGeometry args={[W, D, 1, 1]} />
-                <meshMatcapMaterial matcap={matcapFloor} color={floorColor} />
-            </mesh>
+    useMemo(() => {
+        scene.traverse((child) => {
+            if ((child as THREE.Mesh).isMesh) {
+                const mesh = child as THREE.Mesh
+                const name = mesh.name.toLowerCase()
 
-            {/* Ceiling */}
-            <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, H, 0]}>
-                <planeGeometry args={[W, D]} />
-                <meshMatcapMaterial matcap={matcapCeil} color={ceilColor} />
-            </mesh>
+                if (name.includes('wall')) {
+                    mesh.material = new THREE.MeshMatcapMaterial({ matcap: matcapWall, color: wallColor })
+                } else if (name.includes('ceil')) {
+                    mesh.material = new THREE.MeshMatcapMaterial({ matcap: matcapCeil, color: ceilColor })
+                } else if (name.includes('floor')) {
+                    mesh.material = new THREE.MeshMatcapMaterial({ matcap: matcapFloor, color: floorColor })
+                } else if (name.includes('accent')) {
+                    mesh.material = new THREE.MeshMatcapMaterial({ matcap: matcapAccent, color: accentColor })
+                } else if (name.includes('box')) {
+                    mesh.material = new THREE.MeshMatcapMaterial({ matcap: matcapPlastic, color: '#110754ff' })
+                }
+            }
+        })
+    }, [scene, matcapFloor, matcapWall, matcapCeil, matcapAccent, floorColor, wallColor, ceilColor, accentColor])
 
-            {/* North wall */}
-            <mesh position={[0, H / 2, -D / 2]}>
-                <planeGeometry args={[W, H]} />
-                <meshMatcapMaterial matcap={matcapWall} color={wallColor} />
-            </mesh>
-
-            {/* South wall */}
-            <mesh rotation={[0, Math.PI, 0]} position={[0, H / 2, D / 2]}>
-                <planeGeometry args={[W, H]} />
-                <meshMatcapMaterial matcap={matcapWall} color={wallColor} />
-            </mesh>
-
-            {/* West wall */}
-            <mesh rotation={[0, Math.PI / 2, 0]} position={[-W / 2, H / 2, 0]}>
-                <planeGeometry args={[D, H]} />
-                <meshMatcapMaterial matcap={matcapWall} color={wallColor} />
-            </mesh>
-
-            {/* East wall */}
-            <mesh rotation={[0, -Math.PI / 2, 0]} position={[W / 2, H / 2, 0]}>
-                <planeGeometry args={[D, H]} />
-                <meshMatcapMaterial matcap={matcapWall} color={wallColor} />
-            </mesh>
-
-            {/* Divisions walls */}
-            <mesh rotation={[0, 0, 0]} position={[0, H / 2, -10]}>
-                <planeGeometry args={[20, H]} />
-                <meshMatcapMaterial matcap={matcapWall} color={wallColor} side={THREE.DoubleSide} />
-            </mesh>
-
-            {/* Baseboard trim */}
-            {[
-                { pos: [0, 0.1, -D / 2 + 0.05] as [number, number, number], rot: [0, 0, 0] as [number, number, number], w: W },
-                { pos: [0, 0.1, D / 2 - 0.05] as [number, number, number], rot: [0, Math.PI, 0] as [number, number, number], w: W },
-                { pos: [-W / 2 + 0.05, 0.1, 0] as [number, number, number], rot: [0, Math.PI / 2, 0] as [number, number, number], w: D },
-                { pos: [W / 2 - 0.05, 0.1, 0] as [number, number, number], rot: [0, -Math.PI / 2, 0] as [number, number, number], w: D },
-            ].map((b, i) => (
-                <mesh key={`base-${i}`} position={b.pos} rotation={b.rot}>
-                    <boxGeometry args={[b.w, 0.2, 0.05]} />
-                    <meshMatcapMaterial matcap={matcapAccent} color={accentColor} />
-                </mesh>
-            ))}
-
-            {/* Central bench */}
-            <group position={[0, 0, 0]}>
-                <mesh position={[0, 0.5, 0]}>
-                    <boxGeometry args={[3.5, 0.06, 1.5]} />
-                    <meshMatcapMaterial matcap={matcapAccent} color={accentColor} />
-                </mesh>
-                {[-0.9, 0.9].map((x, i) => [
-                    <mesh key={`leg-${i}a`} position={[x, 0.11, -0.22]}>
-                        <boxGeometry args={[0.08, 0.62, 0.06]} />
-                        <meshMatcapMaterial matcap={matcapFloor} color="#111111" />
-                    </mesh>,
-                    <mesh key={`leg-${i}b`} position={[x, 0.11, 0.22]}>
-                        <boxGeometry args={[0.08, 0.62, 0.06]} />
-                        <meshMatcapMaterial matcap={matcapFloor} color="#111111" />
-                    </mesh>
-                ])}
-            </group>
-
-            {/* Ceiling chandeliers */}
-            {[[-4, 0, -4], [4, 0, -4], [-4, 0, 4], [4, 0, 4]].map(([x, , z], i) => (
-                <group key={`chandelier-${i}`} position={[x, H - 0.1, z]}>
-                    <mesh>
-                        <cylinderGeometry args={[0.06, 0.06, 0.3, 8]} />
-                        <meshMatcapMaterial matcap={matcapAccent} color={accentColor} />
-                    </mesh>
-                    <mesh position={[0, -0.25, 0]}>
-                        <sphereGeometry args={[0.12, 16, 16]} />
-                        <meshMatcapMaterial matcap={matcapWhite} color={accentColor} />
-                    </mesh>
-                </group>
-            ))}
-        </group>
-    )
+    return <primitive object={scene} />
 }
+
+useGLTF.preload('/models/gltf/art-gallery-02.glb')
 
 // ─── (First-Person controller removed — using OrbitControls) ─────────────────
 
@@ -662,6 +597,8 @@ function Scene({
         <>
             <Stats />
             <color attach="background" args={['#05040a']} />
+            {/* <ambientLight intensity={1.5} />
+            <directionalLight position={[0, 1, 0]} intensity={5} /> */}
             <GalleryRoom
                 floorMatcapPath={config.floorMatcap}
                 wallMatcapPath={config.wallMatcap}
@@ -935,8 +872,8 @@ export default function ArtGallery() {
             wallColor: { value: '#ffffff', label: 'Wall Color' },
             ceilMatcap: { value: MATCAP_OPTIONS['Plastic White'], options: MATCAP_OPTIONS, label: 'Ceiling' },
             ceilColor: { value: '#ffffff', label: 'Ceiling Color' },
-            accentMatcap: { value: MATCAP_OPTIONS['Gold'], options: MATCAP_OPTIONS, label: 'Accents' },
-            accentColor: { value: '#ffffff', label: 'Accent Color' },
+            accentMatcap: { value: MATCAP_OPTIONS['Rubber Black'], options: MATCAP_OPTIONS, label: 'Accents' },
+            accentColor: { value: '#3c3c3cff', label: 'Accent Color' },
         }, { collapsed: true }),
         Artwork: folder({
             frameMatcap: { value: MATCAP_OPTIONS['Gold'], options: MATCAP_OPTIONS, label: 'Frames' },

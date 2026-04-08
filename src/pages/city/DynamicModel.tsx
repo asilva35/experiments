@@ -54,4 +54,4 @@ export function DynamicModel({ url, onPOIsDetected }: DynamicModelProps) {
 }
 
 // Muy importante para el performance: limpiar el caché de la URL al desmontar
-useGLTF.preload = (url: string) => useGLTF.preload(url)
+//useGLTF.preload = (url: string) => useGLTF.preload(url)
