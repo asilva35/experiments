@@ -1,4 +1,4 @@
-import React, { useState, useRef, Suspense } from 'react';
+import React, { useState, useRef } from 'react';
 import { GoogleMap, useJsApiLoader, DrawingManager, Autocomplete } from '@react-google-maps/api';
 import { jsPDF } from 'jspdf';
 // Nota: He incluido clases de Tailwind para el diseño elegante
@@ -118,14 +118,14 @@ export default function FaisanEstateIntelligence() {
 
         // 💡 FILTRADO DE FEATURES (Solo funciona con Map ID vectorial)
         // Esto oculta POIs y etiquetas sin matar la geometría 3D
-        const featureStyleOptions = {
-            // Oculta todos los puntos de interés (iconos de tiendas, etc.)
-            'poi': { visibility: 'off' },
-            // Oculta los nombres de las calles
-            'road.label': { visibility: 'off' },
-            // Oculta iconos de transporte
-            'transit': { visibility: 'off' }
-        };
+        // const featureStyleOptions = {
+        //     // Oculta todos los puntos de interés (iconos de tiendas, etc.)
+        //     'poi': { visibility: 'off' },
+        //     // Oculta los nombres de las calles
+        //     'road.label': { visibility: 'off' },
+        //     // Oculta iconos de transporte
+        //     'transit': { visibility: 'off' }
+        // };
 
         // Aplicar estilos dinámicamente
         // Nota: Algunas versiones requieren que esto se configure en el Cloud Style

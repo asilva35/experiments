@@ -132,7 +132,7 @@ export default function MatcapComposer() {
     });
 
     // Controles dinámicos para cada Mesh detectado
-    const [, setControls] = useControls('Materiales por Mesh', () => {
+    useControls('Materiales por Mesh', () => {
         const controls: any = {};
         meshList.forEach((name) => {
             controls[name] = folder({
