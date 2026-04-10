@@ -753,7 +753,7 @@ function Scene({
 
     return (
         <>
-            <Stats />
+            {/* <Stats /> */}
             <color attach="background" args={['#05040a']} />
             <GalleryRoom
                 floorMatcapPath={config.floorMatcap}
