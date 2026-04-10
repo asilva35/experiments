@@ -422,10 +422,10 @@ function ArtworkFrame({
 
     return (
         <group ref={groupRef} position={artwork.position} rotation={artwork.rotation}>
-            {/* Painting canvas */}
+            {/* Painting canvas — z=0.09, clear above passe-partout at z=0.054 */}
             <mesh
                 ref={meshRef}
-                position={[0, 0, 0.08]}
+                position={[0, 0, 0.09]}
                 onPointerEnter={() => setHovered(true)}
                 onPointerLeave={() => setHovered(false)}
                 onClick={handleClick}
@@ -436,8 +436,8 @@ function ArtworkFrame({
 
             {/* Frame - outer border */}
             <mesh ref={frameRef} position={[0, 0, 0]}>
-                <boxGeometry args={[artwork.width + 0.18, artwork.height + 0.18, 0.08]} />
-                <meshMatcapMaterial matcap={matcapFrame} color={hovered ? '#ffffff' : frameColor} />
+                <boxGeometry args={[artwork.width + 0.45, artwork.height + 0.45, 0.08]} />
+                <meshMatcapMaterial matcap={matcapFrame} color={hovered ? '#ffffffff' : frameColor} />
             </mesh>
 
             {/* Frame inner bevel */}
@@ -446,13 +446,19 @@ function ArtworkFrame({
                 <meshMatcapMaterial matcap={matcapFrame} color={frameColor} />
             </mesh>
 
+            {/* Passe-partout (mat board) — cream/white surface between bevel and canvas */}
+            <mesh position={[0, 0, 0.054]}>
+                <planeGeometry args={[artwork.width + 0.30, artwork.height + 0.30]} />
+                <meshMatcapMaterial matcap={matcapWhite} color="#f5f0e8" />
+            </mesh>
+
             {/* Label plaque */}
-            <mesh position={[0, -(artwork.height / 2) - 0.22, 0.01]}>
+            <mesh position={[0, -(artwork.height / 2) - 0.5, 0.01]}>
                 <boxGeometry args={[1.4, 0.22, 0.02]} />
                 <meshMatcapMaterial matcap={matcapBlack} color={plaqueColor} />
             </mesh>
             <Text
-                position={[0, -(artwork.height / 2) - 0.19, 0.03]}
+                position={[0, -(artwork.height / 2) - 0.45, 0.03]}
                 fontSize={0.07}
                 color="#d4c5a0"
                 anchorX="center"
@@ -462,7 +468,7 @@ function ArtworkFrame({
                 {artwork.title}
             </Text>
             <Text
-                position={[0, -(artwork.height / 2) - 0.28, 0.03]}
+                position={[0, -(artwork.height / 2) - 0.55, 0.03]}
                 fontSize={0.055}
                 color="#a09070"
                 anchorX="center"
@@ -737,14 +743,14 @@ function Scene({
             gsap.to(camera.position, {
                 x: 0,
                 y: 1.8,
-                z: 0,
+                z: 12,
                 duration: 2.5,
                 ease: "expo.out"
             })
             gsap.to(controlsRef.current.target, {
                 x: 0,
                 y: 1.8,
-                z: -12,
+                z: 0,
                 duration: 2.5,
                 ease: "expo.out",
                 onUpdate: () => controlsRef.current.update()
@@ -826,22 +832,35 @@ function ArtworkPanel({
                 top: '50%',
                 right: 24,
                 zIndex: 100,
-                transform: 'translateY(-50%)',
+                transform: 'translateY(-50%) translateZ(0)',  /* force GPU layer */
                 width: '380px',
                 maxHeight: '85vh',
-                background: 'rgba(10, 8, 5, 0.75)',
-                backdropFilter: 'blur(16px)',
-                WebkitBackdropFilter: 'blur(16px)',
+                // ── No backdrop-filter: it forces a GPU→CPU pixel readback on every
+                // frame which kills WebGL performance. Instead we use a high-opacity
+                // layered gradient + SVG noise so the panel still reads as "glass".
+                background: [
+                    // subtle grain overlay (SVG noise, base-64 encoded)
+                    `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E")`,
+                    // rich dark gradient that fakes depth / translucency
+                    'linear-gradient(160deg, rgba(22,16,10,0.97) 0%, rgba(10,8,5,0.98) 60%, rgba(18,12,6,0.97) 100%)',
+                ].join(', '),
                 padding: '40px 30px',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 24,
                 borderRadius: '24px',
-                border: '1px solid rgba(200, 169, 78, 0.3)',
-                boxShadow: '0 20px 50px rgba(0,0,0,0.5), inset 0 0 20px rgba(200,169,78,0.05)',
+                border: '1px solid rgba(200, 169, 78, 0.25)',
+                // Stronger outer glow compensates for missing blur depth cue
+                boxShadow: [
+                    '0 24px 60px rgba(0,0,0,0.7)',
+                    '0 0 0 1px rgba(200,169,78,0.08)',
+                    'inset 0 1px 0 rgba(255,255,255,0.04)',
+                    'inset 0 0 30px rgba(200,169,78,0.04)',
+                ].join(', '),
                 animation: 'slideInRight 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
                 overflowY: 'auto',
                 scrollbarWidth: 'none',
+                willChange: 'transform',  /* keep on its own compositor layer */
             }}
         >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
@@ -1036,8 +1055,8 @@ export default function ArtGallery() {
             accentColor: { value: '#3c3c3cff', label: 'Accent Color' },
         }, { collapsed: true }),
         Artwork: folder({
-            frameMatcap: { value: MATCAP_OPTIONS['Gold'], options: MATCAP_OPTIONS, label: 'Frames' },
-            frameColor: { value: '#ffffff', label: 'Frame Color' },
+            frameMatcap: { value: MATCAP_OPTIONS['Plastic Black'], options: MATCAP_OPTIONS, label: 'Frames' },
+            frameColor: { value: '#3a3a3aff', label: 'Frame Color' },
             paintingMatcap: { value: MATCAP_OPTIONS['Mate White'], options: MATCAP_OPTIONS, label: 'Painting' },
             paintingColor: { value: '#ffffff', label: 'Painting Color' },
             plaqueMatcap: { value: MATCAP_OPTIONS['Plastic Black'], options: MATCAP_OPTIONS, label: 'Plaques' },
@@ -1139,10 +1158,13 @@ export default function ArtGallery() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    background: 'rgba(5, 4, 10, 0.4)',
-                    backdropFilter: 'blur(4px)',
+                    // ── Replaced backdropFilter: blur() — kills WebGL FPS.
+                    // A dark radial vignette draws the eye to the centre and
+                    // creates enough contrast for the title without any blur.
+                    background: 'radial-gradient(ellipse 70% 70% at 50% 50%, rgba(5,4,10,0.55) 0%, rgba(3,2,8,0.82) 100%)',
                     zIndex: 200,
-                    transition: 'all 0.8s ease'
+                    transition: 'opacity 0.8s ease',
+                    willChange: 'opacity',
                 }}>
                     <div style={{ textAlign: 'center' }}>
                         <h1 style={{
