@@ -499,23 +499,16 @@ function MusicPlayer() {
     return (
         <div style={{ position: 'fixed', top: 22, right: 32, zIndex: 110 }}>
             <audio ref={audioRef} loop src="/music/A_Gentle_Return.mp3" />
-            <button
+            <div
                 onClick={toggle}
                 style={{
-                    background: isPlaying ? 'rgba(201,168,76,0.15)' : 'rgba(5,4,10,0.4)',
-                    border: isPlaying ? '1px solid #c9a84c' : '1px solid rgba(255,255,255,0.1)',
-                    color: isPlaying ? '#e8d5a0' : '#4a3a1a',
-                    borderRadius: '50%', width: 44, height: 44,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    position: 'fixed', top: 24, right: 120, zIndex: 110,
+                    color: '#4a3a1a', fontSize: 11, fontFamily: 'monospace',
+                    letterSpacing: 2, pointerEvents: 'all',
                     cursor: 'pointer', transition: 'all 0.4s cubic-bezier(0.16,1,0.3,1)',
-                    backdropFilter: 'blur(8px)',
-                    fontSize: 18,
-                    boxShadow: isPlaying ? '0 0 25px rgba(201,168,76,0.2)' : 'none'
-                }}
-                title="Sintonizar Galería"
-            >
-                {isPlaying ? '🔊' : '🔇'}
-            </button>
+                }}>
+                {isPlaying ? 'Music On |' : 'Music Off |'}
+            </div>
         </div>
     )
 }
@@ -999,7 +992,15 @@ const navBtnStyle = {
 
 // ─── HUD Overlay ──────────────────────────────────────────────────────────────
 
-function HUD({ focusedArtwork }: { focusedArtwork: Artwork | null }) {
+function HUD({
+    focusedArtwork,
+    onNext,
+    onPrev,
+}: {
+    focusedArtwork: Artwork | null
+    onNext: () => void
+    onPrev: () => void
+}) {
     if (focusedArtwork) return null
 
     return (
@@ -1011,6 +1012,25 @@ function HUD({ focusedArtwork }: { focusedArtwork: Artwork | null }) {
                 lineHeight: 1.9, textAlign: 'right', zIndex: 50, pointerEvents: 'none',
             }}>
                 Left drag — Orbit &nbsp;|&nbsp; Scroll — Zoom &nbsp;|&nbsp; Right drag — Pan &nbsp;|&nbsp; Click painting — Inspect
+            </div>
+
+            {/* Navigation */}
+            <div style={{
+                position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+                display: 'flex', gap: 12,
+                color: '#4a3a1a', fontSize: 11, fontFamily: 'monospace',
+                letterSpacing: 2, zIndex: 50, pointerEvents: 'all',
+            }}>
+                <button
+                    style={{ ...navBtnStyle, background: 'rgba(255,255,255,0.5)' }}
+                    onClick={onPrev}
+                    title="Obra anterior"
+                >{'<'}</button>
+                <button
+                    style={{ ...navBtnStyle, background: 'rgba(255,255,255,0.5)' }}
+                    onClick={onNext}
+                    title="Obra siguiente"
+                >{'>'}</button>
             </div>
 
             {/* Gallery name watermark */}
@@ -1091,17 +1111,27 @@ export default function ArtGallery() {
     }, [focusedArtwork])
 
     const handleNext = useCallback(() => {
-        if (!focusedArtwork) return
-        const idx = locatedArtworks.findIndex(a => a.id === focusedArtwork.id)
-        setFocusedArtwork(locatedArtworks[(idx + 1) % locatedArtworks.length])
+        if (locatedArtworks.length === 0) return
+        if (!focusedArtwork) {
+            // Nothing focused yet — jump to the first artwork
+            setFocusedArtwork(locatedArtworks[0])
+        } else {
+            const idx = locatedArtworks.findIndex(a => a.id === focusedArtwork.id)
+            setFocusedArtwork(locatedArtworks[(idx + 1) % locatedArtworks.length])
+        }
         setZoomDistance(3.8)
         setVerticalOffset(0)
     }, [focusedArtwork, locatedArtworks])
 
     const handlePrev = useCallback(() => {
-        if (!focusedArtwork) return
-        const idx = locatedArtworks.findIndex(a => a.id === focusedArtwork.id)
-        setFocusedArtwork(locatedArtworks[(idx - 1 + locatedArtworks.length) % locatedArtworks.length])
+        if (locatedArtworks.length === 0) return
+        if (!focusedArtwork) {
+            // Nothing focused yet — jump to the last artwork
+            setFocusedArtwork(locatedArtworks[locatedArtworks.length - 1])
+        } else {
+            const idx = locatedArtworks.findIndex(a => a.id === focusedArtwork.id)
+            setFocusedArtwork(locatedArtworks[(idx - 1 + locatedArtworks.length) % locatedArtworks.length])
+        }
         setZoomDistance(3.8)
         setVerticalOffset(0)
     }, [focusedArtwork, locatedArtworks])
@@ -1136,7 +1166,7 @@ export default function ArtGallery() {
             </Canvas>
 
             <MusicPlayer />
-            <HUD focusedArtwork={focusedArtwork} />
+            <HUD focusedArtwork={focusedArtwork} onNext={handleNext} onPrev={handlePrev} />
 
             {focusedArtwork && (
                 <ArtworkPanel
