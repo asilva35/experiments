@@ -19,6 +19,7 @@ import MatcapComposer from './pages/matcaplab/MatcapComposer'
 import SmartLoader from './pages/matcaplab/SmartLoader'
 import RealEstateDashboard from './pages/real-estate-insights/RealEstateDashboard'
 import ArtGallery from './pages/art-gallery/ArtGallery'
+import Shaders from './pages/shaders/Shaders'
 
 // Un componente simple para la página de inicio o selección
 const Home = () => (
@@ -85,6 +86,9 @@ const Home = () => (
       <Link to="/art-gallery" className="text-amber-400 hover:text-amber-300 transition-colors flex items-center gap-2">
         <span className="opacity-50">/20</span> Art Gallery 3D
       </Link>
+      <Link to="/shaders" className="text-pink-500 hover:text-pink-400 transition-colors flex items-center gap-2">
+        <span className="opacity-50">/21</span> Shaders
+      </Link>
 
     </nav>
   </div>
@@ -115,6 +119,7 @@ export default function App() {
         <Route path="/smartloader" element={<SmartLoader />} />
         <Route path="/real-estate-dashboard" element={<RealEstateDashboard />} />
         <Route path="/art-gallery" element={<ArtGallery />} />
+        <Route path="/shaders" element={<Shaders />} />
       </Routes>
     </BrowserRouter>
   )

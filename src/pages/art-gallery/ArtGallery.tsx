@@ -9,6 +9,7 @@ import {
 } from '@react-three/drei'
 import { useControls, folder } from 'leva'
 import * as THREE from 'three'
+import { WOOD_FLOOR_FRAGMENT_SHADER, WOOD_FLOOR_VERTEX_SHADER } from '../../components/WoodFloorShader'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -461,6 +462,7 @@ function MusicPlayer() {
     )
 }
 
+
 // ─── Main Gallery Page ─────────────────────────────────────────────────────────────
 
 function GalleryRoom({
@@ -501,7 +503,17 @@ function GalleryRoom({
                 } else if (name.includes('ceil')) {
                     mesh.material = new THREE.MeshMatcapMaterial({ matcap: matcapCeil, color: ceilColor })
                 } else if (name.includes('floor')) {
-                    mesh.material = new THREE.MeshMatcapMaterial({ matcap: matcapFloor, color: floorColor })
+                    mesh.material = new THREE.ShaderMaterial({
+                        vertexShader: WOOD_FLOOR_VERTEX_SHADER,
+                        fragmentShader: WOOD_FLOOR_FRAGMENT_SHADER,
+                        uniforms: {
+                            uTime: { value: 0 },
+                            uRepeat: { value: new THREE.Vector2(22.0, 1.0) },
+                            uRotation: { value: 0 }, // In radians
+                            uColorLight: { value: new THREE.Color(0.72, 0.68, 0.62) },
+                            uColorDark: { value: new THREE.Color(0.80, 0.76, 0.69) }
+                        }
+                    })
                 } else if (name.includes('accent')) {
                     mesh.material = new THREE.MeshMatcapMaterial({ matcap: matcapAccent, color: accentColor })
                 } else if (name.includes('box')) {
