@@ -1,5 +1,6 @@
-import { useRef, useState, useCallback, useMemo, Suspense } from 'react'
-import { Canvas, useFrame } from '@react-three/fiber'
+import { useRef, useState, useCallback, useMemo, Suspense, useEffect } from 'react'
+import { Canvas, useThree, useFrame } from '@react-three/fiber'
+import { gsap } from 'gsap'
 import {
     OrbitControls,
     Text,
@@ -7,7 +8,7 @@ import {
     useGLTF,
     Stats,
 } from '@react-three/drei'
-import { useControls, folder } from 'leva'
+import { useControls, folder, Leva } from 'leva'
 import * as THREE from 'three'
 import { WOOD_FLOOR_FRAGMENT_SHADER, WOOD_FLOOR_VERTEX_SHADER } from '../../components/WoodFloorShader'
 import { WALL_FRAGMENT_SHADER, WALL_VERTEX_SHADER } from '../../components/WallShader'
@@ -568,6 +569,7 @@ function Scene({
     verticalOffset: number
     isExploring: boolean
 }) {
+    const { camera } = useThree()
     const controlsRef = useRef<any>(null)
     const lastCameraState = useRef({
         position: new THREE.Vector3(0, 4, 12),
@@ -575,68 +577,95 @@ function Scene({
         saved: false
     })
 
+    // Automatic rotation movement handle
     useFrame((state) => {
         if (!controlsRef.current) return
-
-        const targetPos = new THREE.Vector3()
-        const targetLookAt = new THREE.Vector3()
-
         if (!isExploring) {
-            // Automatic rotation movement
-            const time = state.clock.getElapsedTime() * 0.2
-            state.camera.position.x = Math.sin(time) * 12
-            state.camera.position.z = Math.cos(time) * 12
-            state.camera.position.y = 3 + Math.sin(time * 0.5) * 2
-            state.camera.lookAt(0, 1.8, 0)
+            const time = state.clock.getElapsedTime() * 0.15
+            camera.position.x = Math.sin(time) * 12
+            camera.position.z = Math.cos(time) * 12
+            camera.position.y = 3 + Math.sin(time * 0.5) * 2
+            camera.lookAt(0, 1.8, 0)
             controlsRef.current.target.set(0, 1.8, 0)
             controlsRef.current.update()
-            return
         }
+    })
+
+    useEffect(() => {
+        if (!controlsRef.current || !isExploring) return
 
         if (focusedArtwork) {
             controlsRef.current.enabled = false
-            // Save state once before moving
+
+            // Save state once before moving if not already saved
             if (!lastCameraState.current.saved) {
-                lastCameraState.current.position.copy(state.camera.position)
+                lastCameraState.current.position.copy(camera.position)
                 lastCameraState.current.target.copy(controlsRef.current.target)
                 lastCameraState.current.saved = true
             }
 
-            // Calculate front position based on artwork rotation
-            const dist = zoomDistance
             const rotY = focusedArtwork.rotation[1]
-            targetPos.set(
-                focusedArtwork.position[0] + Math.sin(rotY) * dist,
-                focusedArtwork.position[1] + verticalOffset,
-                focusedArtwork.position[2] + Math.cos(rotY) * dist
-            )
-            targetLookAt.set(
-                focusedArtwork.position[0],
-                focusedArtwork.position[1] + verticalOffset,
-                focusedArtwork.position[2]
-            )
-        } else {
-            if (lastCameraState.current.saved) {
-                controlsRef.current.enabled = false
-                targetPos.copy(lastCameraState.current.position)
-                targetLookAt.copy(lastCameraState.current.target)
+            const targetPosX = focusedArtwork.position[0] + Math.sin(rotY) * zoomDistance
+            const targetPosY = focusedArtwork.position[1] + verticalOffset
+            const targetPosZ = focusedArtwork.position[2] + Math.cos(rotY) * zoomDistance
 
-                // Reset saved flag when arrived (approx)
-                if (state.camera.position.distanceTo(targetPos) < 0.01) {
+            gsap.to(camera.position, {
+                x: targetPosX,
+                y: targetPosY,
+                z: targetPosZ,
+                duration: 1.5,
+                ease: "power2.inOut"
+            })
+
+            gsap.to(controlsRef.current.target, {
+                x: focusedArtwork.position[0],
+                y: focusedArtwork.position[1] + verticalOffset,
+                z: focusedArtwork.position[2],
+                duration: 1.5,
+                ease: "power2.inOut",
+                onUpdate: () => controlsRef.current.update()
+            })
+        } else if (lastCameraState.current.saved) {
+            // Return to previous position
+            gsap.to(camera.position, {
+                x: lastCameraState.current.position.x,
+                y: lastCameraState.current.position.y,
+                z: lastCameraState.current.position.z,
+                duration: 1.2,
+                ease: "power2.inOut"
+            })
+
+            gsap.to(controlsRef.current.target, {
+                x: lastCameraState.current.target.x,
+                y: lastCameraState.current.target.y,
+                z: lastCameraState.current.target.z,
+                duration: 1.2,
+                ease: "power2.inOut",
+                onUpdate: () => controlsRef.current.update(),
+                onComplete: () => {
                     lastCameraState.current.saved = false
                     controlsRef.current.enabled = true
                 }
-            } else {
-                controlsRef.current.enabled = true
-                return // No move needed
-            }
+            })
+        } else {
+            // Intro to center jump
+            gsap.to(camera.position, {
+                x: 6,
+                y: 1.8,
+                z: 6,
+                duration: 2,
+                ease: "expo.out"
+            })
+            gsap.to(controlsRef.current.target, {
+                x: 0,
+                y: 1.8,
+                z: 0,
+                duration: 2,
+                ease: "expo.out",
+                onUpdate: () => controlsRef.current.update()
+            })
         }
-
-        // Smoothly interpolate
-        state.camera.position.lerp(targetPos, 0.1)
-        controlsRef.current.target.lerp(targetLookAt, 0.1)
-        controlsRef.current.update()
-    })
+    }, [focusedArtwork, isExploring, zoomDistance, verticalOffset, camera])
 
     return (
         <>
@@ -910,6 +939,7 @@ export default function ArtGallery() {
     const [verticalOffset, setVerticalOffset] = useState(0)
     const [isExploring, setIsExploring] = useState(false)
 
+    //HIDE USE CONTROLS
     const config = useControls({
         Room: folder({
             floorMatcap: { value: MATCAP_OPTIONS['Plastic White'], options: MATCAP_OPTIONS, label: 'Floor' },
@@ -956,6 +986,7 @@ export default function ArtGallery() {
 
     return (
         <div style={{ width: '100vw', height: '100vh', background: '#05040a', overflow: 'hidden', position: 'relative' }}>
+            <Leva hidden />
             <style>{`
         @keyframes slideInRight {
           from { transform: translateY(-50%) translateX(100%); opacity: 0; }
@@ -966,19 +997,19 @@ export default function ArtGallery() {
       `}</style>
 
             <Canvas
-                camera={{ fov: 40, near: 0.1, far: 100, position: [2, 2, 12] }}
+                camera={{ fov: 40, near: 0.1, far: 100, position: [2, 2, 6] }}
                 gl={{ antialias: true }}
                 style={{ position: 'absolute', inset: 0 }}
             >
                 <Suspense fallback={null}>
-                    <Scene 
-                onFocus={handleFocus} 
-                config={config} 
-                focusedArtwork={focusedArtwork} 
-                zoomDistance={zoomDistance} 
-                verticalOffset={verticalOffset} 
-                isExploring={isExploring}
-            />
+                    <Scene
+                        onFocus={handleFocus}
+                        config={config}
+                        focusedArtwork={focusedArtwork}
+                        zoomDistance={zoomDistance}
+                        verticalOffset={verticalOffset}
+                        isExploring={isExploring}
+                    />
                 </Suspense>
             </Canvas>
 
@@ -1011,10 +1042,10 @@ export default function ArtGallery() {
                     transition: 'all 0.8s ease'
                 }}>
                     <div style={{ textAlign: 'center' }}>
-                        <h1 style={{ 
-                            color: '#e8d5a0', 
-                            fontSize: '48px', 
-                            fontFamily: 'Georgia, serif', 
+                        <h1 style={{
+                            color: '#e8d5a0',
+                            fontSize: '48px',
+                            fontFamily: 'Georgia, serif',
                             marginBottom: '40px',
                             letterSpacing: '8px',
                             textTransform: 'uppercase',
