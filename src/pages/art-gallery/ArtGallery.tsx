@@ -238,12 +238,11 @@ const MATCAP_OPTIONS = {
     'Rubber Black': '/textures/matcaps/rubber-black.png',
 }
 
-const ARTWORKS: Artwork[] = [
-    // Main Hall - North wall
+const ARTWORKS: Omit<Artwork, 'position' | 'rotation'>[] = [
     {
         id: 1, title: 'Patacón', artist: 'Eliana Vivas', year: '2026',
         description: 'Una deliciosa representación de la cultura caribeña, capturada en un momento de perfección dorada.',
-        position: [0, 2.2, -9.7], rotation: [0, 0, 0], width: 1.8, height: 2.5,
+        width: 1.8, height: 2.5,
         colors: ['#f39c12', '#d35400', '#f1c40f', '#f7dc6f'],
         imagePath: '/art/patacon.jpg',
         style: 'portrait'
@@ -251,7 +250,7 @@ const ARTWORKS: Artwork[] = [
     {
         id: 2, title: 'Kona', artist: 'Eliana Vivas', year: '2026',
         description: 'Inspired by the vast poppy fields of Flanders, a meditation on beauty and loss.',
-        position: [-4, 2.2, -9.7], rotation: [0, 0, 0], width: 2, height: 2.5,
+        width: 2, height: 2.5,
         colors: ['#87CEEB', '#4a90d9', '#cc2200', '#8B0000', '#228B22'],
         imagePath: '/art/kona.jpg',
         style: 'landscape'
@@ -259,38 +258,36 @@ const ARTWORKS: Artwork[] = [
     {
         id: 3, title: 'Mona', artist: 'Eliana Vivas', year: '2026',
         description: 'A timeless portrait capturing the mystery and elegance of the feminine spirit.',
-        position: [4, 2.2, -9.7], rotation: [0, 0, 0], width: 2.2, height: 2.5,
+        width: 2.2, height: 2.5,
         colors: ['#2c1810', '#3d2b1f', '#1a3a4a', '#c8956c'],
         imagePath: '/art/mona.jpg',
         style: 'portrait'
     },
-    // Main Hall - West wall
     {
         id: 4, title: 'Bauhaus Reverie', artist: 'Klaus Müller', year: '2018',
         description: 'A tribute to the revolutionary Bauhaus movement, exploring form and function.',
-        position: [-9.7, 2.2, -3], rotation: [0, Math.PI / 2, 0], width: 2.5, height: 2,
+        width: 2.5, height: 2,
         colors: ['#ffffff', '#ff0000', '#0000ff', '#ffff00', '#000000'],
         style: 'geometric'
     },
     {
         id: 5, title: 'Whispers of Monet', artist: 'Claire Dubois', year: '2022',
         description: 'An impressionist ode to the water lilies, blurring the line between dream and reality.',
-        position: [-9.7, 2.2, 3], rotation: [0, Math.PI / 2, 0], width: 2.5, height: 1.8,
+        width: 2.5, height: 1.8,
         colors: ['#2d5a8e', '#4a8cb5', '#7ec8c8', '#e8d5a3', '#f4a460', '#228b22'],
         style: 'impressionist'
     },
-    // Main Hall - East wall
     {
         id: 6, title: 'Neon Genesis', artist: 'Yuki Tanaka', year: '2023',
         description: 'Digital strokes of neon brilliance, a vision of humanity in the cyberpunk age.',
-        position: [9.7, 2.2, -3], rotation: [0, -Math.PI / 2, 0], width: 2.5, height: 2,
+        width: 2.5, height: 2,
         colors: ['#0d0d1a', '#ff00ff', '#00ffff', '#ff6600', '#9900ff'],
         style: 'abstract'
     },
     {
         id: 7, title: 'Mediterranean Dusk', artist: 'Marco Ricci', year: '2020',
         description: 'The last light of day over the Aegean Sea, painted with raw emotion and golden warmth.',
-        position: [9.7, 2.2, 3], rotation: [0, -Math.PI / 2, 0], width: 2.5, height: 1.8,
+        width: 2.5, height: 1.8,
         colors: ['#ff6b35', '#f7931e', '#ffcd3c', '#1a5276', '#0e3460'],
         style: 'landscape'
     },
@@ -298,21 +295,21 @@ const ARTWORKS: Artwork[] = [
     {
         id: 8, title: 'The Architect', artist: 'Anya Petrova', year: '2017',
         description: 'A study in structural geometry, where mathematics becomes art.',
-        position: [0, 2.2, 9.7], rotation: [0, Math.PI, 0], width: 3, height: 2,
+        width: 3, height: 2,
         colors: ['#1a1a2e', '#16213e', '#0f3460', '#e94560', '#533483'],
         style: 'geometric'
     },
     {
         id: 9, title: 'Dreams of Autumn', artist: 'Hiroshi Nakamura', year: '2021',
         description: 'A haiku in pigment — the fleeting beauty of Japanese autumn leaves.',
-        position: [-4, 2.2, 9.7], rotation: [0, Math.PI, 0], width: 2, height: 2.5,
+        width: 2, height: 2.5,
         colors: ['#ff8c00', '#ff4500', '#dc143c', '#8b0000', '#2f4f4f'],
         style: 'impressionist'
     },
     {
         id: 10, title: 'The Wanderer', artist: 'Léa Fontaine', year: '2019',
         description: 'A solitary figure against the vast unknown — a search for meaning in the modern age.',
-        position: [4, 2.2, 9.7], rotation: [0, Math.PI, 0], width: 1.8, height: 2.5,
+        width: 1.8, height: 2.5,
         colors: ['#34495e', '#2c3e50', '#7f8c8d', '#bdc3c7'],
         style: 'portrait'
     },
@@ -364,21 +361,74 @@ function ArtworkFrame({
 }) {
     const meshRef = useRef<THREE.Mesh>(null)
     const frameRef = useRef<THREE.Mesh>(null)
+    const groupRef = useRef<THREE.Group>(null)
     const [hovered, setHovered] = useState(false)
+
+    const { camera, scene } = useThree()
 
     const matcapFrame = useTexture(frameMatcapPath)
     const matcapWhite = useTexture(whiteMatcapPath)
     const matcapBlack = useTexture(blackMatcapPath)
 
+    const handleClick = useCallback((e: { face: THREE.Face | null, point: THREE.Vector3, object: THREE.Object3D }) => {
+        // ── 1. Back-face guard ─────────────────────────────────────────────
+        // The painting mesh uses DoubleSide, so we must reject clicks on the
+        // back face by checking the face normal vs the camera→hit direction.
+        if (e.face) {
+            const normalWorld = e.face.normal.clone()
+                .transformDirection(e.object.matrixWorld)
+            const camToHit = new THREE.Vector3()
+                .subVectors(e.point, camera.position)
+                .normalize()
+            // Dot ≥ 0 means the normal and view direction agree → back face
+            if (normalWorld.dot(camToHit) >= 0) return
+        }
+
+        // ── 2. Occlusion guard ────────────────────────────────────────────
+        // Cast a ray from the camera toward the artwork centre. If any mesh
+        // that is NOT part of this artwork group is closer, the artwork is
+        // occluded (e.g. there is a wall in between) and we ignore the click.
+        const artworkWorldPos = new THREE.Vector3(
+            artwork.position[0],
+            artwork.position[1],
+            artwork.position[2],
+        )
+        const direction = artworkWorldPos.clone().sub(camera.position).normalize()
+        const distance = camera.position.distanceTo(artworkWorldPos)
+
+        const occlusionRay = new THREE.Raycaster(
+            camera.position.clone(),
+            direction,
+            0,
+            distance - 0.05,   // stop just before the artwork plane
+        )
+
+        // Walk up the parent chain to see if an object belongs to our group
+        const isPartOfGroup = (obj: THREE.Object3D): boolean => {
+            let cur: THREE.Object3D | null = obj
+            while (cur) {
+                if (cur === groupRef.current) return true
+                cur = cur.parent
+            }
+            return false
+        }
+
+        const hits = occlusionRay.intersectObjects(scene.children, true)
+        const isOccluded = hits.some(hit => !isPartOfGroup(hit.object))
+        if (isOccluded) return
+
+        onFocus(artwork)
+    }, [artwork, camera, scene, onFocus])
+
     return (
-        <group position={artwork.position} rotation={artwork.rotation}>
+        <group ref={groupRef} position={artwork.position} rotation={artwork.rotation}>
             {/* Painting canvas */}
             <mesh
                 ref={meshRef}
                 position={[0, 0, 0.08]}
                 onPointerEnter={() => setHovered(true)}
                 onPointerLeave={() => setHovered(false)}
-                onClick={() => onFocus(artwork)}
+                onClick={handleClick}
             >
                 <planeGeometry args={[artwork.width, artwork.height]} />
                 <PaintingMaterial artwork={artwork} matcapWhite={matcapWhite} paintingColor={paintingColor} />
@@ -476,6 +526,7 @@ function GalleryRoom({
     wallColor,
     ceilColor,
     accentColor,
+    onArtworksLocated,
 }: {
     floorMatcapPath: string
     wallMatcapPath: string
@@ -485,6 +536,7 @@ function GalleryRoom({
     wallColor: string
     ceilColor: string
     accentColor: string
+    onArtworksLocated: (locations: { id: number, position: THREE.Vector3, rotation: THREE.Euler }[]) => void
 }) {
     const matcapFloor = useTexture(floorMatcapPath)
     const matcapWall = useTexture(wallMatcapPath)
@@ -495,7 +547,29 @@ function GalleryRoom({
     const { scene } = useGLTF('/models/gltf/art-gallery-02.glb')
 
     useMemo(() => {
+        const locations: { id: number, position: THREE.Vector3, rotation: THREE.Euler }[] = []
+
         scene.traverse((child) => {
+            if (child.name.toLowerCase().includes('frame-empty')) {
+                // Extract ID from name like "frame-empty-01"
+                const parts = child.name.split('-')
+                const idStr = parts[parts.length - 1]
+                const id = parseInt(idStr)
+                if (!isNaN(id)) {
+                    // We need world position/rotation
+                    child.updateWorldMatrix(true, false)
+                    const pos = new THREE.Vector3()
+                    const quat = new THREE.Quaternion()
+                    const scale = new THREE.Vector3()
+                    child.matrixWorld.decompose(pos, quat, scale)
+                    const rot = new THREE.Euler().setFromQuaternion(quat)
+
+                    locations.push({ id, position: pos, rotation: rot })
+                }
+                // Hide the placeholder
+                child.visible = false
+            }
+
             if ((child as THREE.Mesh).isMesh) {
                 const mesh = child as THREE.Mesh
                 const name = mesh.name.toLowerCase()
@@ -541,16 +615,15 @@ function GalleryRoom({
                 }
             }
         })
-    }, [scene, matcapFloor, matcapWall, matcapCeil, matcapAccent, floorColor, wallColor, ceilColor, accentColor])
+        if (locations.length > 0) {
+            onArtworksLocated(locations)
+        }
+    }, [scene, matcapFloor, matcapWall, matcapCeil, matcapAccent, floorColor, wallColor, ceilColor, accentColor, onArtworksLocated])
 
     return <primitive object={scene} />
 }
 
 useGLTF.preload('/models/gltf/art-gallery-02.glb')
-
-// ─── (First-Person controller removed — using OrbitControls) ─────────────────
-
-// ─── (Particles removed for performance) ───────────────────────────────────
 
 // ─── Scene ────────────────────────────────────────────────────────────────────
 
@@ -572,8 +645,8 @@ function Scene({
     const { camera } = useThree()
     const controlsRef = useRef<any>(null)
     const lastCameraState = useRef({
-        position: new THREE.Vector3(0, 4, 12),
-        target: new THREE.Vector3(0, 1.8, 0),
+        position: new THREE.Vector3(0, 5, 15),
+        target: new THREE.Vector3(0, 1.8, -12),
         saved: false
     })
 
@@ -581,12 +654,12 @@ function Scene({
     useFrame((state) => {
         if (!controlsRef.current) return
         if (!isExploring) {
-            const time = state.clock.getElapsedTime() * 0.15
-            camera.position.x = Math.sin(time) * 12
-            camera.position.z = Math.cos(time) * 12
-            camera.position.y = 3 + Math.sin(time * 0.5) * 2
-            camera.lookAt(0, 1.8, 0)
-            controlsRef.current.target.set(0, 1.8, 0)
+            const time = state.clock.getElapsedTime() * 0.1
+            camera.position.x = Math.sin(time) * 14
+            camera.position.z = Math.cos(time) * 14
+            camera.position.y = 4 + Math.sin(time * 0.5) * 2
+            camera.lookAt(0, 1.8, -6)
+            controlsRef.current.target.set(0, 1.8, -6)
             controlsRef.current.update()
         }
     })
@@ -604,10 +677,22 @@ function Scene({
                 lastCameraState.current.saved = true
             }
 
-            const rotY = focusedArtwork.rotation[1]
-            const targetPosX = focusedArtwork.position[0] + Math.sin(rotY) * zoomDistance
+
+            // Derive the artwork's world-space front-face normal by rotating
+            // the local +Z axis (0,0,1) with the full rotation quaternion.
+            // This is correct for ANY rotation combination — using only
+            // Math.sin/cos(rotation[1]) breaks when the Euler decomposition
+            // distributes 180°Y as (π, 0, π) instead of (0, π, 0), making
+            // rotation[1]=0 and shooting the camera to the wrong side.
+            const [rx, ry, rz] = focusedArtwork.rotation
+            const artworkQuat = new THREE.Quaternion().setFromEuler(
+                new THREE.Euler(rx, ry, rz)
+            )
+            const faceNormal = new THREE.Vector3(0, 0, 1).applyQuaternion(artworkQuat)
+
+            const targetPosX = focusedArtwork.position[0] + faceNormal.x * zoomDistance
             const targetPosY = focusedArtwork.position[1] + verticalOffset
-            const targetPosZ = focusedArtwork.position[2] + Math.cos(rotY) * zoomDistance
+            const targetPosZ = focusedArtwork.position[2] + faceNormal.z * zoomDistance
 
             gsap.to(camera.position, {
                 x: targetPosX,
@@ -648,19 +733,19 @@ function Scene({
                 }
             })
         } else {
-            // Intro to center jump
+            // Intro to center jump - Move into the hall
             gsap.to(camera.position, {
-                x: 6,
+                x: 0,
                 y: 1.8,
-                z: 6,
-                duration: 2,
+                z: 0,
+                duration: 2.5,
                 ease: "expo.out"
             })
             gsap.to(controlsRef.current.target, {
                 x: 0,
                 y: 1.8,
-                z: 0,
-                duration: 2,
+                z: -12,
+                duration: 2.5,
                 ease: "expo.out",
                 onUpdate: () => controlsRef.current.update()
             })
@@ -671,8 +756,6 @@ function Scene({
         <>
             <Stats />
             <color attach="background" args={['#05040a']} />
-            {/* <ambientLight intensity={1.5} />
-            <directionalLight position={[0, 1, 0]} intensity={5} /> */}
             <GalleryRoom
                 floorMatcapPath={config.floorMatcap}
                 wallMatcapPath={config.wallMatcap}
@@ -682,9 +765,10 @@ function Scene({
                 wallColor={config.wallColor}
                 ceilColor={config.ceilColor}
                 accentColor={config.accentColor}
+                onArtworksLocated={config.onArtworksLocated}
             />
 
-            {ARTWORKS.map((aw) => (
+            {(config.locatedArtworks as Artwork[]).map((aw) => (
                 <ArtworkFrame
                     key={aw.id}
                     artwork={aw}
@@ -961,6 +1045,25 @@ export default function ArtGallery() {
         }, { collapsed: true }),
     })
 
+    const [locatedArtworks, setLocatedArtworks] = useState<Artwork[]>([])
+
+    // Sync ARTWORKS with located positions from GLTF
+    const handleArtworksLocated = useCallback((locations: { id: number, position: THREE.Vector3, rotation: THREE.Euler }[]) => {
+        const updated = ARTWORKS.map(art => {
+            const loc = locations.find(l => l.id === art.id)
+            if (loc) {
+                return {
+                    ...art,
+                    position: [loc.position.x, loc.position.y, loc.position.z],
+                    rotation: [loc.rotation.x, loc.rotation.y, loc.rotation.z]
+                } as Artwork
+            }
+            return null
+        }).filter(Boolean) as Artwork[]
+
+        setLocatedArtworks(updated)
+    }, [])
+
     const handleFocus = useCallback((artwork: Artwork | null) => {
         if (focusedArtwork && artwork && focusedArtwork.id === artwork.id) return
         setFocusedArtwork(artwork)
@@ -970,19 +1073,19 @@ export default function ArtGallery() {
 
     const handleNext = useCallback(() => {
         if (!focusedArtwork) return
-        const idx = ARTWORKS.findIndex(a => a.id === focusedArtwork.id)
-        setFocusedArtwork(ARTWORKS[(idx + 1) % ARTWORKS.length])
+        const idx = locatedArtworks.findIndex(a => a.id === focusedArtwork.id)
+        setFocusedArtwork(locatedArtworks[(idx + 1) % locatedArtworks.length])
         setZoomDistance(3.8)
         setVerticalOffset(0)
-    }, [focusedArtwork])
+    }, [focusedArtwork, locatedArtworks])
 
     const handlePrev = useCallback(() => {
         if (!focusedArtwork) return
-        const idx = ARTWORKS.findIndex(a => a.id === focusedArtwork.id)
-        setFocusedArtwork(ARTWORKS[(idx - 1 + ARTWORKS.length) % ARTWORKS.length])
+        const idx = locatedArtworks.findIndex(a => a.id === focusedArtwork.id)
+        setFocusedArtwork(locatedArtworks[(idx - 1 + locatedArtworks.length) % locatedArtworks.length])
         setZoomDistance(3.8)
         setVerticalOffset(0)
-    }, [focusedArtwork])
+    }, [focusedArtwork, locatedArtworks])
 
     return (
         <div style={{ width: '100vw', height: '100vh', background: '#05040a', overflow: 'hidden', position: 'relative' }}>
@@ -1004,7 +1107,7 @@ export default function ArtGallery() {
                 <Suspense fallback={null}>
                     <Scene
                         onFocus={handleFocus}
-                        config={config}
+                        config={{ ...config, locatedArtworks, onArtworksLocated: handleArtworksLocated }}
                         focusedArtwork={focusedArtwork}
                         zoomDistance={zoomDistance}
                         verticalOffset={verticalOffset}
