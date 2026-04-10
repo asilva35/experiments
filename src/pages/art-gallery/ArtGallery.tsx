@@ -10,6 +10,7 @@ import {
 import { useControls, folder } from 'leva'
 import * as THREE from 'three'
 import { WOOD_FLOOR_FRAGMENT_SHADER, WOOD_FLOOR_VERTEX_SHADER } from '../../components/WoodFloorShader'
+import { WALL_FRAGMENT_SHADER, WALL_VERTEX_SHADER } from '../../components/WallShader'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -499,9 +500,27 @@ function GalleryRoom({
                 const name = mesh.name.toLowerCase()
 
                 if (name.includes('wall')) {
-                    mesh.material = new THREE.MeshMatcapMaterial({ matcap: matcapWall, color: wallColor })
+                    mesh.material = new THREE.ShaderMaterial({
+                        vertexShader: WALL_VERTEX_SHADER,
+                        fragmentShader: WALL_FRAGMENT_SHADER,
+                        uniforms: {
+                            uColor: { value: new THREE.Color(0.95, 0.95, 0.95) },
+                            uNoiseColor: { value: new THREE.Color(0.85, 0.85, 0.85) },
+                            uNoiseScale: { value: 0.0 },
+                            uBumpStrength: { value: 0.4 }
+                        }
+                    })
                 } else if (name.includes('ceil')) {
-                    mesh.material = new THREE.MeshMatcapMaterial({ matcap: matcapCeil, color: ceilColor })
+                    mesh.material = new THREE.ShaderMaterial({
+                        vertexShader: WALL_VERTEX_SHADER,
+                        fragmentShader: WALL_FRAGMENT_SHADER,
+                        uniforms: {
+                            uColor: { value: new THREE.Color(0.95, 0.95, 0.95) },
+                            uNoiseColor: { value: new THREE.Color(0.85, 0.85, 0.85) },
+                            uNoiseScale: { value: 50.0 },
+                            uBumpStrength: { value: 0.4 }
+                        }
+                    })
                 } else if (name.includes('floor')) {
                     mesh.material = new THREE.ShaderMaterial({
                         vertexShader: WOOD_FLOOR_VERTEX_SHADER,
@@ -540,12 +559,14 @@ function Scene({
     focusedArtwork,
     zoomDistance,
     verticalOffset,
+    isExploring,
 }: {
     onFocus: (a: Artwork | null) => void
     config: any
     focusedArtwork: Artwork | null
     zoomDistance: number
     verticalOffset: number
+    isExploring: boolean
 }) {
     const controlsRef = useRef<any>(null)
     const lastCameraState = useRef({
@@ -559,6 +580,18 @@ function Scene({
 
         const targetPos = new THREE.Vector3()
         const targetLookAt = new THREE.Vector3()
+
+        if (!isExploring) {
+            // Automatic rotation movement
+            const time = state.clock.getElapsedTime() * 0.2
+            state.camera.position.x = Math.sin(time) * 12
+            state.camera.position.z = Math.cos(time) * 12
+            state.camera.position.y = 3 + Math.sin(time * 0.5) * 2
+            state.camera.lookAt(0, 1.8, 0)
+            controlsRef.current.target.set(0, 1.8, 0)
+            controlsRef.current.update()
+            return
+        }
 
         if (focusedArtwork) {
             controlsRef.current.enabled = false
@@ -646,7 +679,7 @@ function Scene({
                 minDistance={2}
                 maxDistance={16}
                 maxPolarAngle={Math.PI / 2 - 0.05}
-                target={[0, 1.8, 0]}
+                target={[0, 1.8, -12]}
             />
         </>
     )
@@ -875,6 +908,7 @@ export default function ArtGallery() {
     const [focusedArtwork, setFocusedArtwork] = useState<Artwork | null>(null)
     const [zoomDistance, setZoomDistance] = useState(3.8)
     const [verticalOffset, setVerticalOffset] = useState(0)
+    const [isExploring, setIsExploring] = useState(false)
 
     const config = useControls({
         Room: folder({
@@ -932,12 +966,19 @@ export default function ArtGallery() {
       `}</style>
 
             <Canvas
-                camera={{ fov: 40, near: 0.1, far: 100, position: [0, 4, 12] }}
+                camera={{ fov: 40, near: 0.1, far: 100, position: [2, 2, 12] }}
                 gl={{ antialias: true }}
                 style={{ position: 'absolute', inset: 0 }}
             >
                 <Suspense fallback={null}>
-                    <Scene onFocus={handleFocus} config={config} focusedArtwork={focusedArtwork} zoomDistance={zoomDistance} verticalOffset={verticalOffset} />
+                    <Scene 
+                onFocus={handleFocus} 
+                config={config} 
+                focusedArtwork={focusedArtwork} 
+                zoomDistance={zoomDistance} 
+                verticalOffset={verticalOffset} 
+                isExploring={isExploring}
+            />
                 </Suspense>
             </Canvas>
 
@@ -955,6 +996,62 @@ export default function ArtGallery() {
                     verticalOffset={verticalOffset}
                     onVerticalOffsetChange={setVerticalOffset}
                 />
+            )}
+
+            {!isExploring && (
+                <div style={{
+                    position: 'absolute',
+                    inset: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'rgba(5, 4, 10, 0.4)',
+                    backdropFilter: 'blur(4px)',
+                    zIndex: 200,
+                    transition: 'all 0.8s ease'
+                }}>
+                    <div style={{ textAlign: 'center' }}>
+                        <h1 style={{ 
+                            color: '#e8d5a0', 
+                            fontSize: '48px', 
+                            fontFamily: 'Georgia, serif', 
+                            marginBottom: '40px',
+                            letterSpacing: '8px',
+                            textTransform: 'uppercase',
+                            opacity: 0.9
+                        }}>
+                            Gallery Lumiere
+                        </h1>
+                        <button
+                            onClick={() => setIsExploring(true)}
+                            style={{
+                                background: 'transparent',
+                                border: '2px solid #c9a84c',
+                                color: '#e8d5a0',
+                                padding: '16px 48px',
+                                fontSize: '14px',
+                                letterSpacing: '4px',
+                                textTransform: 'uppercase',
+                                cursor: 'pointer',
+                                transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+                                borderRadius: '4px',
+                                fontWeight: '600'
+                            }}
+                            onMouseEnter={e => {
+                                e.currentTarget.style.background = '#c9a84c'
+                                e.currentTarget.style.color = '#05040a'
+                                e.currentTarget.style.boxShadow = '0 0 30px rgba(201, 168, 76, 0.3)'
+                            }}
+                            onMouseLeave={e => {
+                                e.currentTarget.style.background = 'transparent'
+                                e.currentTarget.style.color = '#e8d5a0'
+                                e.currentTarget.style.boxShadow = 'none'
+                            }}
+                        >
+                            Begin the Experience
+                        </button>
+                    </div>
+                </div>
             )}
         </div>
     )
