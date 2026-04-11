@@ -6,7 +6,7 @@ import {
     Text,
     useTexture,
     useGLTF,
-    Stats,
+    //Stats,
 } from '@react-three/drei'
 import { useControls, folder, Leva } from 'leva'
 import * as THREE from 'three'
@@ -278,14 +278,14 @@ const ARTWORKS: Omit<Artwork, 'position' | 'rotation'>[] = [
         style: 'impressionist'
     },
     {
-        id: 6, title: 'Neon Genesis', artist: 'Yuki Tanaka', year: '2023',
+        id: 6, title: 'Six', artist: 'Yuki Tanaka', year: '2023',
         description: 'Digital strokes of neon brilliance, a vision of humanity in the cyberpunk age.',
         width: 2.5, height: 2,
         colors: ['#0d0d1a', '#ff00ff', '#00ffff', '#ff6600', '#9900ff'],
         style: 'abstract'
     },
     {
-        id: 7, title: 'Mediterranean Dusk', artist: 'Marco Ricci', year: '2020',
+        id: 7, title: 'Seven', artist: 'Marco Ricci', year: '2020',
         description: 'The last light of day over the Aegean Sea, painted with raw emotion and golden warmth.',
         width: 2.5, height: 1.8,
         colors: ['#ff6b35', '#f7931e', '#ffcd3c', '#1a5276', '#0e3460'],
@@ -293,21 +293,77 @@ const ARTWORKS: Omit<Artwork, 'position' | 'rotation'>[] = [
     },
     // Wing B - South area
     {
-        id: 8, title: 'The Architect', artist: 'Anya Petrova', year: '2017',
+        id: 8, title: 'Eight', artist: 'Anya Petrova', year: '2017',
         description: 'A study in structural geometry, where mathematics becomes art.',
         width: 3, height: 2,
         colors: ['#1a1a2e', '#16213e', '#0f3460', '#e94560', '#533483'],
         style: 'geometric'
     },
     {
-        id: 9, title: 'Dreams of Autumn', artist: 'Hiroshi Nakamura', year: '2021',
+        id: 9, title: 'Nine', artist: 'Hiroshi Nakamura', year: '2021',
         description: 'A haiku in pigment — the fleeting beauty of Japanese autumn leaves.',
         width: 2, height: 2.5,
         colors: ['#ff8c00', '#ff4500', '#dc143c', '#8b0000', '#2f4f4f'],
         style: 'impressionist'
     },
     {
-        id: 10, title: 'The Wanderer', artist: 'Léa Fontaine', year: '2019',
+        id: 10, title: 'Ten', artist: 'Léa Fontaine', year: '2019',
+        description: 'A solitary figure against the vast unknown — a search for meaning in the modern age.',
+        width: 1.8, height: 2.5,
+        colors: ['#34495e', '#2c3e50', '#7f8c8d', '#bdc3c7'],
+        style: 'portrait'
+    },
+    {
+        id: 11, title: 'Eleven', artist: 'Léa Fontaine', year: '2019',
+        description: 'A solitary figure against the vast unknown — a search for meaning in the modern age.',
+        width: 1.8, height: 2.5,
+        colors: ['#34495e', '#2c3e50', '#7f8c8d', '#bdc3c7'],
+        style: 'portrait'
+    },
+    {
+        id: 12, title: 'Twelve', artist: 'Léa Fontaine', year: '2019',
+        description: 'A solitary figure against the vast unknown — a search for meaning in the modern age.',
+        width: 1.8, height: 2.5,
+        colors: ['#34495e', '#2c3e50', '#7f8c8d', '#bdc3c7'],
+        style: 'portrait'
+    },
+    {
+        id: 13, title: 'Thirteen', artist: 'Léa Fontaine', year: '2019',
+        description: 'A solitary figure against the vast unknown — a search for meaning in the modern age.',
+        width: 1.8, height: 2.5,
+        colors: ['#34495e', '#2c3e50', '#7f8c8d', '#bdc3c7'],
+        style: 'portrait'
+    },
+    {
+        id: 14, title: 'Fourteen', artist: 'Léa Fontaine', year: '2019',
+        description: 'A solitary figure against the vast unknown — a search for meaning in the modern age.',
+        width: 1.8, height: 2.5,
+        colors: ['#34495e', '#2c3e50', '#7f8c8d', '#bdc3c7'],
+        style: 'portrait'
+    },
+    {
+        id: 15, title: 'Fifteen', artist: 'Léa Fontaine', year: '2019',
+        description: 'A solitary figure against the vast unknown — a search for meaning in the modern age.',
+        width: 1.8, height: 2.5,
+        colors: ['#34495e', '#2c3e50', '#7f8c8d', '#bdc3c7'],
+        style: 'portrait'
+    },
+    {
+        id: 16, title: 'Sixteen', artist: 'Léa Fontaine', year: '2019',
+        description: 'A solitary figure against the vast unknown — a search for meaning in the modern age.',
+        width: 1.8, height: 2.5,
+        colors: ['#34495e', '#2c3e50', '#7f8c8d', '#bdc3c7'],
+        style: 'portrait'
+    },
+    {
+        id: 17, title: 'Seventeen', artist: 'Léa Fontaine', year: '2019',
+        description: 'A solitary figure against the vast unknown — a search for meaning in the modern age.',
+        width: 1.8, height: 2.5,
+        colors: ['#34495e', '#2c3e50', '#7f8c8d', '#bdc3c7'],
+        style: 'portrait'
+    },
+    {
+        id: 18, title: 'Eighteen', artist: 'Léa Fontaine', year: '2019',
         description: 'A solitary figure against the vast unknown — a search for meaning in the modern age.',
         width: 1.8, height: 2.5,
         colors: ['#34495e', '#2c3e50', '#7f8c8d', '#bdc3c7'],
@@ -633,6 +689,7 @@ function Scene({
     zoomDistance,
     verticalOffset,
     isExploring,
+    onInteraction,
 }: {
     onFocus: (a: Artwork | null) => void
     config: any
@@ -640,6 +697,7 @@ function Scene({
     zoomDistance: number
     verticalOffset: number
     isExploring: boolean
+    onInteraction: () => void
 }) {
     const { camera } = useThree()
     const controlsRef = useRef<any>(null)
@@ -734,14 +792,14 @@ function Scene({
         } else {
             // Intro to center jump - Move into the hall
             gsap.to(camera.position, {
-                x: 0,
+                x: -13,
                 y: 1.8,
-                z: 12,
+                z: 6,
                 duration: 2.5,
                 ease: "expo.out"
             })
             gsap.to(controlsRef.current.target, {
-                x: 0,
+                x: -13,
                 y: 1.8,
                 z: 0,
                 duration: 2.5,
@@ -792,6 +850,7 @@ function Scene({
                 maxDistance={16}
                 maxPolarAngle={Math.PI / 2 - 0.05}
                 target={[0, 1.8, -12]}
+                onStart={onInteraction}
             />
         </>
     )
@@ -994,13 +1053,17 @@ const navBtnStyle = {
 
 function HUD({
     focusedArtwork,
-    onNext,
-    onPrev,
+    locatedArtworks,
+    onFocus,
+    showTutorial,
 }: {
     focusedArtwork: Artwork | null
-    onNext: () => void
-    onPrev: () => void
+    locatedArtworks: Artwork[]
+    onFocus: (a: Artwork | null) => void
+    showTutorial: boolean
 }) {
+    const [menuOpen, setMenuOpen] = useState(false)
+
     if (focusedArtwork) return null
 
     return (
@@ -1014,24 +1077,151 @@ function HUD({
                 Left drag — Orbit &nbsp;|&nbsp; Scroll — Zoom &nbsp;|&nbsp; Right drag — Pan &nbsp;|&nbsp; Click painting — Inspect
             </div>
 
-            {/* Navigation */}
-            <div style={{
-                position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
-                display: 'flex', gap: 12,
-                color: '#4a3a1a', fontSize: 11, fontFamily: 'monospace',
-                letterSpacing: 2, zIndex: 50, pointerEvents: 'all',
-            }}>
-                <button
-                    style={{ ...navBtnStyle, background: 'rgba(255,255,255,0.5)' }}
-                    onClick={onPrev}
-                    title="Obra anterior"
-                >{'<'}</button>
-                <button
-                    style={{ ...navBtnStyle, background: 'rgba(255,255,255,0.5)' }}
-                    onClick={onNext}
-                    title="Obra siguiente"
-                >{'>'}</button>
-            </div>
+            {showTutorial && (
+                <div style={{
+                    position: 'fixed', top: "50%", left: "50%", transform: "translate(-50%, -50%)",
+                    width: 120,
+                    height: 120,
+                    zIndex: 100,
+                    pointerEvents: 'none',
+                    animation: 'handPulse 3s ease-in-out infinite',
+                }}>
+                    <img src="/images/hand.svg" alt="Hand" style={{ width: '100%', height: '100%' }} />
+                </div>
+            )}
+
+            {/* Hamburger button */}
+            <button
+                id="gallery-menu-btn"
+                onClick={() => setMenuOpen(o => !o)}
+                title={menuOpen ? 'Cerrar índice' : 'Índice de obras'}
+                style={{
+                    position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+                    zIndex: 60, pointerEvents: 'all',
+                    background: menuOpen ? 'rgba(201,168,76,0.18)' : 'rgba(30,22,10,0.72)',
+                    border: '1px solid rgba(201,168,76,0.35)',
+                    borderRadius: '14px',
+                    width: 48, height: 48,
+                    cursor: 'pointer',
+                    display: 'flex', flexDirection: 'column',
+                    alignItems: 'center', justifyContent: 'center', gap: 5,
+                    transition: 'all 0.3s cubic-bezier(0.16,1,0.3,1)',
+                    boxShadow: menuOpen
+                        ? '0 0 24px rgba(201,168,76,0.25)'
+                        : '0 4px 20px rgba(0,0,0,0.5)',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(201,168,76,0.22)'; e.currentTarget.style.boxShadow = '0 0 24px rgba(201,168,76,0.3)' }}
+                onMouseLeave={e => {
+                    e.currentTarget.style.background = menuOpen ? 'rgba(201,168,76,0.18)' : 'rgba(30,22,10,0.72)'
+                    e.currentTarget.style.boxShadow = menuOpen ? '0 0 24px rgba(201,168,76,0.25)' : '0 4px 20px rgba(0,0,0,0.5)'
+                }}
+            >
+                {/* Three lines that animate to X */}
+                {[0, 1, 2].map(i => (
+                    <span key={i} style={{
+                        display: 'block',
+                        width: 20, height: 1.5,
+                        background: '#c9a84c',
+                        borderRadius: 2,
+                        transition: 'all 0.3s cubic-bezier(0.16,1,0.3,1)',
+                        transformOrigin: 'center',
+                        transform: menuOpen
+                            ? i === 0 ? 'translateY(6.5px) rotate(45deg)'
+                                : i === 2 ? 'translateY(-6.5px) rotate(-45deg)'
+                                    : 'scaleX(0) translateY(0)'
+                            : 'none',
+                        opacity: menuOpen && i === 1 ? 0 : 1,
+                    }} />
+                ))}
+            </button>
+
+            {/* Floating artwork index menu */}
+            {menuOpen && (
+                <div
+                    id="gallery-artwork-index"
+                    style={{
+                        position: 'fixed', bottom: 84, left: '50%',
+                        transform: 'translateX(-50%)',
+                        zIndex: 55, pointerEvents: 'all',
+                        background: [
+                            `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E")`,
+                            'linear-gradient(160deg, rgba(22,16,10,0.97) 0%, rgba(10,8,5,0.98) 60%, rgba(18,12,6,0.97) 100%)',
+                        ].join(', '),
+                        borderRadius: '20px',
+                        border: '1px solid rgba(200,169,78,0.25)',
+                        boxShadow: [
+                            '0 24px 60px rgba(0,0,0,0.7)',
+                            '0 0 0 1px rgba(200,169,78,0.08)',
+                            'inset 0 1px 0 rgba(255,255,255,0.04)',
+                        ].join(', '),
+                        padding: '20px 24px',
+                        minWidth: 280,
+                        maxWidth: 360,
+                        maxHeight: '60vh',
+                        overflowY: 'auto',
+                        scrollbarWidth: 'none',
+                        animation: 'menuSlideUp 0.4s cubic-bezier(0.16,1,0.3,1)',
+                    }}
+                >
+                    <div style={{
+                        color: '#c9a84c', fontSize: 10, fontFamily: 'monospace',
+                        letterSpacing: 3, textTransform: 'uppercase',
+                        marginBottom: 16, paddingBottom: 12,
+                        borderBottom: '1px solid rgba(200,169,78,0.15)',
+                    }}>
+                        Índice de Obras · {locatedArtworks.length} works
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        {locatedArtworks.map((aw, idx) => (
+                            <button
+                                key={aw.id}
+                                id={`gallery-artwork-link-${aw.id}`}
+                                onClick={() => { onFocus(aw); setMenuOpen(false) }}
+                                style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    borderRadius: '10px',
+                                    padding: '10px 14px',
+                                    cursor: 'pointer',
+                                    display: 'flex', alignItems: 'center', gap: 14,
+                                    textAlign: 'left', width: '100%',
+                                    transition: 'background 0.2s',
+                                }}
+                                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(200,169,78,0.1)' }}
+                                onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+                            >
+                                <span style={{
+                                    color: '#c9a84c', fontFamily: 'monospace',
+                                    fontSize: 10, letterSpacing: 1,
+                                    minWidth: 22, opacity: 0.6,
+                                }}>
+                                    {String(idx + 1).padStart(2, '0')}
+                                </span>
+                                <div>
+                                    <div style={{
+                                        color: '#e8d5a0', fontSize: 14,
+                                        fontFamily: 'Georgia, serif', lineHeight: 1.3,
+                                        marginBottom: 2,
+                                    }}>
+                                        {aw.title}
+                                    </div>
+                                    <div style={{
+                                        color: '#8a7a5a', fontSize: 11,
+                                        fontFamily: 'monospace', letterSpacing: 0.5,
+                                    }}>
+                                        {aw.artist} · {aw.year}
+                                    </div>
+                                </div>
+                                <span style={{
+                                    marginLeft: 'auto', color: '#c9a84c',
+                                    fontSize: 16, opacity: 0.5,
+                                }}>›</span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* Gallery name watermark */}
             <div style={{
@@ -1061,6 +1251,7 @@ export default function ArtGallery() {
     const [zoomDistance, setZoomDistance] = useState(3.8)
     const [verticalOffset, setVerticalOffset] = useState(0)
     const [isExploring, setIsExploring] = useState(false)
+    const [showTutorial, setShowTutorial] = useState(false)
 
     //HIDE USE CONTROLS
     const config = useControls({
@@ -1108,6 +1299,11 @@ export default function ArtGallery() {
         setFocusedArtwork(artwork)
         setZoomDistance(3.8)
         setVerticalOffset(0)
+
+        if (artwork) {
+            localStorage.setItem('tutorialFinish', 'true')
+            setShowTutorial(false)
+        }
     }, [focusedArtwork])
 
     const handleNext = useCallback(() => {
@@ -1144,6 +1340,15 @@ export default function ArtGallery() {
           from { transform: translateY(-50%) translateX(100%); opacity: 0; }
           to { transform: translateY(-50%) translateX(0); opacity: 1; }
         }
+        @keyframes menuSlideUp {
+          from { transform: translateX(-50%) translateY(16px); opacity: 0; }
+          to { transform: translateX(-50%) translateY(0); opacity: 1; }
+        }
+        @keyframes handPulse {
+          0% { opacity: 0; transform: translate(-50%, -40%) scale(0.9); }
+          50% { opacity: 0.6; transform: translate(-50%, -50%) scale(1); }
+          100% { opacity: 0; transform: translate(-50%, -60%) scale(1.1); }
+        }
         * { box-sizing: border-box; }
         ::-webkit-scrollbar { display: none; }
       `}</style>
@@ -1161,12 +1366,18 @@ export default function ArtGallery() {
                         zoomDistance={zoomDistance}
                         verticalOffset={verticalOffset}
                         isExploring={isExploring}
+                        onInteraction={() => setShowTutorial(false)}
                     />
                 </Suspense>
             </Canvas>
 
             <MusicPlayer />
-            <HUD focusedArtwork={focusedArtwork} onNext={handleNext} onPrev={handlePrev} />
+            <HUD
+                focusedArtwork={focusedArtwork}
+                locatedArtworks={locatedArtworks}
+                onFocus={handleFocus}
+                showTutorial={showTutorial}
+            />
 
             {focusedArtwork && (
                 <ArtworkPanel
@@ -1209,7 +1420,11 @@ export default function ArtGallery() {
                             Gallery Lumiere
                         </h1>
                         <button
-                            onClick={() => setIsExploring(true)}
+                            onClick={() => {
+                                setIsExploring(true)
+                                const finished = localStorage.getItem('tutorialFinish') === 'true'
+                                if (!finished) setShowTutorial(true)
+                            }}
                             style={{
                                 background: 'transparent',
                                 border: '2px solid #c9a84c',
