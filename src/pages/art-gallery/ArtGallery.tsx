@@ -1401,13 +1401,32 @@ export default function ArtGallery() {
     }, [focusedArtwork, locatedArtworks]);
 
     useEffect(() => {
-        if (!isTouring) return;
+        if (!isTouring || !focusedArtwork) return;
 
+        // 1s - initial move to maximum distance
+        const t1 = setTimeout(() => setZoomDistance(4.8), 1000);
+        
+        // 6s (30%) - closer inspection
+        const t2 = setTimeout(() => setZoomDistance(2.0), 6000);
+        
+        // 12s (60%) - intimate inspection
+        const t3 = setTimeout(() => setZoomDistance(1.8), 12000);
+        
+        // 16s (80%) - pull back slightly before switching
+        const t4 = setTimeout(() => setZoomDistance(2.5), 16000);
+
+        // 20s (100%) - proceed to next artwork
         const timer = setTimeout(() => {
             handleNext();
         }, 20000);
 
-        return () => clearTimeout(timer);
+        return () => {
+            clearTimeout(t1);
+            clearTimeout(t2);
+            clearTimeout(t3);
+            clearTimeout(t4);
+            clearTimeout(timer);
+        };
     }, [isTouring, focusedArtwork, handleNext]);
 
     return (
