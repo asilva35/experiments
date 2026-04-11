@@ -539,27 +539,31 @@ function ArtworkFrame({
 
 // ─── Music Player ─────────────────────────────────────────────────────────────
 
-function MusicPlayer({ focusedArtwork }: { focusedArtwork: Artwork | null }) {
-    const [isPlaying, setIsPlaying] = useState(false)
+function MusicPlayer({
+    focusedArtwork,
+    isPlaying,
+    onTogglePlay
+}: {
+    focusedArtwork: Artwork | null
+    isPlaying: boolean
+    onTogglePlay: () => void
+}) {
     const audioRef = useRef<HTMLAudioElement | null>(null)
 
-    const toggle = () => {
+    useEffect(() => {
         if (!audioRef.current) return
         if (isPlaying) {
-            audioRef.current.pause()
+            audioRef.current.play().catch(() => { console.warn('Audio auto-play prevented by browser') })
         } else {
-            audioRef.current.play().catch(() => { })
+            audioRef.current.pause()
         }
-        setIsPlaying(!isPlaying)
-    }
-
-    //if (focusedArtwork) return null
+    }, [isPlaying])
 
     return (
         <div style={{ position: 'fixed', top: 22, right: 32, zIndex: 110 }}>
             <audio ref={audioRef} loop src="/music/A_Gentle_Return.mp3" />
             <div
-                onClick={toggle}
+                onClick={onTogglePlay}
                 style={{
                     position: 'fixed', top: 24, right: 120, zIndex: 110,
                     color: '#4a3a1a', fontSize: 11, fontFamily: 'monospace',
@@ -974,7 +978,7 @@ function ArtworkPanel({
             <div style={{ background: 'rgba(200,169,78,0.05)', padding: '20px', borderRadius: '16px', border: '1px solid rgba(200,169,78,0.1)', display: 'flex', flexDirection: 'column', gap: 16 }}>
                 <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                        <span style={{ color: '#8a7a5a', fontSize: 11, textTransform: 'uppercase', letterSpacing: 2 }}>Distancia de Inspección</span>
+                        <span style={{ color: '#8a7a5a', fontSize: 11, textTransform: 'uppercase', letterSpacing: 2 }}>Inspection Distance</span>
                         <span style={{ color: '#c9a84c', fontSize: 12, fontFamily: 'monospace' }}>{zoomDistance.toFixed(1)}m</span>
                     </div>
                     <input
@@ -1000,11 +1004,6 @@ function ArtworkPanel({
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', gap: 6 }}>
-                    {artwork.colors.slice(0, 5).map((c, i) => (
-                        <div key={i} style={{ width: 24, height: 24, borderRadius: '6px', background: c, border: '1px solid rgba(255,255,255,0.1)' }} />
-                    ))}
-                </div>
 
                 <button
                     onClick={onClose}
@@ -1030,7 +1029,7 @@ function ArtworkPanel({
                         e.currentTarget.style.transform = 'translateY(0)'
                     }}
                 >
-                    VOLVER A SALA
+                    Back to Room
                 </button>
             </div>
         </div>
@@ -1237,7 +1236,7 @@ function HUD({
                             <button
                                 key={aw.id}
                                 id={`gallery-artwork-link-${aw.id}`}
-                                onClick={() => { setIsTouring(false); onFocus(aw); setMenuOpen(false) }}
+                                onClick={() => { onFocus(aw); setMenuOpen(false) }}
                                 style={{
                                     background: 'transparent',
                                     border: 'none',
@@ -1297,6 +1296,7 @@ export default function ArtGallery() {
     const [isExploring, setIsExploring] = useState(false)
     const [showTutorial, setShowTutorial] = useState(false)
     const [isTouring, setIsTouring] = useState(false)
+    const [isPlayingMusic, setIsPlayingMusic] = useState(false)
 
     //HIDE USE CONTROLS
     const config = useControls({
@@ -1390,8 +1390,11 @@ export default function ArtGallery() {
     const toggleTour = useCallback(() => {
         setIsTouring(prev => {
             const nextState = !prev;
-            if (nextState && !focusedArtwork && locatedArtworks.length > 0) {
-                setFocusedArtwork(locatedArtworks[0]);
+            if (nextState) {
+                setIsPlayingMusic(true);
+                if (!focusedArtwork && locatedArtworks.length > 0) {
+                    setFocusedArtwork(locatedArtworks[0]);
+                }
             }
             return nextState;
         });
@@ -1450,7 +1453,11 @@ export default function ArtGallery() {
                 </Suspense>
             </Canvas>
 
-            <MusicPlayer focusedArtwork={focusedArtwork} />
+            <MusicPlayer
+                focusedArtwork={focusedArtwork}
+                isPlaying={isPlayingMusic}
+                onTogglePlay={() => setIsPlayingMusic(p => !p)}
+            />
             <HUD
                 focusedArtwork={focusedArtwork}
                 locatedArtworks={locatedArtworks}
@@ -1480,7 +1487,7 @@ export default function ArtGallery() {
                         position: 'fixed',
                         bottom: 0,
                         left: 0,
-                        height: 4,
+                        height: 6,
                         background: '#c9a84c',
                         zIndex: 200,
                         animation: 'tourProgress 20s linear forwards',
