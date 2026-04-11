@@ -540,18 +540,20 @@ function ArtworkFrame({
 
 // ─── FPS Controller ─────────────────────────────────────────────────────────────
 
-function FPSMovement() {
+function FPSMovement({ cameraMode, controlsRef }: { cameraMode: 'orbit' | 'fps', controlsRef: any }) {
     const { camera } = useThree()
     const [movement, setMovement] = useState({ forward: false, backward: false, left: false, right: false })
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
+            if (cameraMode !== 'fps') return;
             if (e.code === 'KeyW' || e.code === 'ArrowUp') setMovement(m => ({ ...m, forward: true }))
             if (e.code === 'KeyS' || e.code === 'ArrowDown') setMovement(m => ({ ...m, backward: true }))
             if (e.code === 'KeyA' || e.code === 'ArrowLeft') setMovement(m => ({ ...m, left: true }))
             if (e.code === 'KeyD' || e.code === 'ArrowRight') setMovement(m => ({ ...m, right: true }))
         }
         const handleKeyUp = (e: KeyboardEvent) => {
+            if (cameraMode !== 'fps') return;
             if (e.code === 'KeyW' || e.code === 'ArrowUp') setMovement(m => ({ ...m, forward: false }))
             if (e.code === 'KeyS' || e.code === 'ArrowDown') setMovement(m => ({ ...m, backward: false }))
             if (e.code === 'KeyA' || e.code === 'ArrowLeft') setMovement(m => ({ ...m, left: false }))
@@ -559,13 +561,18 @@ function FPSMovement() {
         }
         window.addEventListener('keydown', handleKeyDown)
         window.addEventListener('keyup', handleKeyUp)
+        
+        // Reset movement if mode switches
+        if (cameraMode !== 'fps') setMovement({ forward: false, backward: false, left: false, right: false })
+        
         return () => {
             window.removeEventListener('keydown', handleKeyDown)
             window.removeEventListener('keyup', handleKeyUp)
         }
-    }, [])
+    }, [cameraMode])
 
     useFrame((state, delta) => {
+        if (cameraMode !== 'fps') return;
         // Apply smooth but snappy WASD movement
         const speed = 6 * delta
         if (movement.forward) camera.translateZ(-speed)
@@ -583,7 +590,8 @@ function FPSMovement() {
         if (camera.position.z < -18) camera.position.z = -18
     })
 
-    return <PointerLockControls />
+    // selector="#fakefpslock" prevents the component from binding a click listener to the entire document.
+    return <PointerLockControls ref={controlsRef} selector="#fakefpslock" />
 }
 
 // ─── Music Player ─────────────────────────────────────────────────────────────
@@ -747,6 +755,7 @@ function Scene({
     isExploring,
     onInteraction,
     cameraMode,
+    fpsControlsRef,
 }: {
     onFocus: (a: Artwork | null) => void
     config: any
@@ -756,6 +765,7 @@ function Scene({
     isExploring: boolean
     onInteraction: () => void
     cameraMode: 'orbit' | 'fps'
+    fpsControlsRef: any
 }) {
     const { camera } = useThree()
     const controlsRef = useRef<any>(null)
@@ -897,9 +907,9 @@ function Scene({
                 />
             ))}
 
-            {cameraMode === 'fps' ? (
-                <FPSMovement />
-            ) : (
+            <FPSMovement cameraMode={cameraMode} controlsRef={fpsControlsRef} />
+
+            {cameraMode === 'orbit' && (
                 <OrbitControls
                     ref={controlsRef}
                     enableDamping
@@ -1128,22 +1138,32 @@ function HUD({
     onToggleCameraMode: () => void
 }) {
     const [menuOpen, setMenuOpen] = useState(false)
+    const [fpsHintTime, setFpsHintTime] = useState(0)
+
+    useEffect(() => {
+        if (cameraMode === 'fps') {
+            setFpsHintTime(8)
+            const interval = setInterval(() => {
+                setFpsHintTime(t => t > 0 ? t - 1 : 0)
+            }, 1000)
+            return () => clearInterval(interval)
+        }
+    }, [cameraMode])
 
     return (
         <>
             {!focusedArtwork && (
                 <>
                     {/* Controls hint */}
-                    <div style={{
-                        position: 'fixed', bottom: 24, right: 24,
-                        color: '#5a4a2a', fontSize: 11, fontFamily: 'monospace',
-                        lineHeight: 1.9, textAlign: 'right', zIndex: 50, pointerEvents: 'none',
-                    }}>
-                        {cameraMode === 'fps' 
-                            ? <>W, A, S, D — Move &nbsp;|&nbsp; Mouse — Look &nbsp;|&nbsp; Esc — Show Mouse</>
-                            : <>Left drag — Orbit &nbsp;|&nbsp; Scroll — Zoom &nbsp;|&nbsp; Right drag — Pan</>}
-                         &nbsp;|&nbsp; Click painting — Inspect
-                    </div>
+                    {cameraMode === 'orbit' && (
+                        <div style={{
+                            position: 'fixed', bottom: 24, right: 24,
+                            color: '#5a4a2a', fontSize: 11, fontFamily: 'monospace',
+                            lineHeight: 1.9, textAlign: 'right', zIndex: 50, pointerEvents: 'none',
+                        }}>
+                            Left drag — Orbit &nbsp;|&nbsp; Scroll — Zoom &nbsp;|&nbsp; Right drag — Pan &nbsp;|&nbsp; Click painting — Inspect
+                        </div>
+                    )}
 
                     {/* Gallery name watermark */}
                     <div style={{
@@ -1175,6 +1195,46 @@ function HUD({
                     animation: 'handPulse 3s ease-in-out infinite',
                 }}>
                     <img src="/images/hand.svg" alt="Hand" style={{ width: '100%', height: '100%' }} />
+                </div>
+            )}
+
+            {/* FPS Crosshair */}
+            {cameraMode === 'fps' && (
+                <div style={{
+                    position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+                    width: 4, height: 4, background: 'rgba(255, 255, 255, 0.9)',
+                    borderRadius: '50%', zIndex: 100, pointerEvents: 'none',
+                    boxShadow: '0 0 6px rgba(0,0,0,0.8)'
+                }} />
+            )}
+
+            {/* FPS Instructions Modal */}
+            {cameraMode === 'fps' && fpsHintTime > 0 && (
+                <div style={{
+                    position: 'fixed', bottom: 32, right: 32,
+                    background: 'rgba(11, 8, 20, 0.75)',
+                    border: '1px solid rgba(201,168,76,0.25)',
+                    borderRadius: '16px',
+                    padding: '24px 32px',
+                    zIndex: 100, pointerEvents: 'none',
+                    backdropFilter: 'blur(10px)',
+                    color: '#e8d5a0',
+                    textAlign: 'center',
+                    animation: 'fadeOutModalRight 8s forwards',
+                    display: 'flex', flexDirection: 'column', gap: 12
+                }}>
+                    <h3 style={{ fontSize: 16, margin: 0, letterSpacing: 2, textTransform: 'uppercase', textAlign: 'left' }}>Navigation Controls</h3>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'min-content 1fr', gap: '8px 24px', fontSize: 12, fontFamily: 'monospace', color: '#c9a84c', textAlign: 'left', whiteSpace: 'nowrap' }}>
+                        <span>[ W, A, S, D ]</span> <span style={{ color: '#8a7a5a' }}>Walk around</span>
+                        <span>[ Mouse ]</span> <span style={{ color: '#8a7a5a' }}>Look around</span>
+                        <span>[ Left Click ]</span> <span style={{ color: '#8a7a5a' }}>Inspect artwork</span>
+                        <span>[ ESC ]</span> <span style={{ color: '#8a7a5a' }}>Show mouse / Menu</span>
+                    </div>
+                    {/* Timer Footer */}
+                    <div style={{ borderTop: '1px solid rgba(201,168,76,0.15)', paddingTop: 12, marginTop: 4, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span style={{ fontSize: 10, color: '#8a7a5a', textTransform: 'uppercase', letterSpacing: 1 }}>Hiding in</span>
+                        <span style={{ fontSize: 12, color: '#c9a84c', fontFamily: 'monospace' }}>00:0{fpsHintTime}s</span>
+                    </div>
                 </div>
             )}
 
@@ -1385,6 +1445,7 @@ function HUD({
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function ArtGallery() {
+    const fpsControlsRef = useRef<any>(null)
     const [focusedArtwork, setFocusedArtwork] = useState<Artwork | null>(null)
     const [zoomDistance, setZoomDistance] = useState(3.8)
     const [verticalOffset, setVerticalOffset] = useState(0)
@@ -1438,6 +1499,7 @@ export default function ArtGallery() {
     const handleFocus = useCallback((artwork: Artwork | null) => {
         setIsTouring(false) // Stop tour on manual focus
         setCameraMode('orbit') // Reset to orbit when focusing
+        fpsControlsRef.current?.unlock() // Ensure mouse unlocks if inspecting
 
         if (focusedArtwork && artwork && focusedArtwork.id === artwork.id) return
         setFocusedArtwork(artwork)
@@ -1550,6 +1612,12 @@ export default function ArtGallery() {
           from { width: 0%; }
           to { width: 100%; }
         }
+        @keyframes fadeOutModalRight {
+          0% { opacity: 0; transform: translateX(20px); }
+          5% { opacity: 1; transform: translateX(0); }
+          85% { opacity: 1; transform: translateX(0); }
+          100% { opacity: 0; pointer-events: none;}
+        }
         * { box-sizing: border-box; }
         ::-webkit-scrollbar { display: none; }
       `}</style>
@@ -1569,6 +1637,7 @@ export default function ArtGallery() {
                         isExploring={isExploring}
                         onInteraction={() => { setShowTutorial(false); setIsTouring(false); }}
                         cameraMode={cameraMode}
+                        fpsControlsRef={fpsControlsRef}
                     />
                 </Suspense>
             </Canvas>
@@ -1590,17 +1659,13 @@ export default function ArtGallery() {
                     onToggleTour={toggleTour}
                     cameraMode={cameraMode}
                     onToggleCameraMode={() => {
-                        setCameraMode(m => {
-                            if (m === 'orbit') {
-                                // Request Pointer Lock immediately on the canvas!
-                                setTimeout(() => {
-                                    document.querySelector('canvas')?.requestPointerLock();
-                                }, 10);
-                                return 'fps';
-                            }
-                            document.exitPointerLock();
-                            return 'orbit';
-                        });
+                        if (cameraMode === 'orbit') {
+                            setCameraMode('fps');
+                            fpsControlsRef.current?.lock();
+                        } else {
+                            setCameraMode('orbit');
+                            fpsControlsRef.current?.unlock();
+                        }
                         
                         if (focusedArtwork) {
                             setFocusedArtwork(null);
