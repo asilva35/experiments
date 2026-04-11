@@ -318,57 +318,57 @@ const ARTWORKS: Omit<Artwork, 'position' | 'rotation'>[] = [
         id: 11, title: 'Eleven', artist: 'Léa Fontaine', year: '2019',
         description: 'A solitary figure against the vast unknown — a search for meaning in the modern age.',
         width: 1.8, height: 2.5,
-        colors: ['#34495e', '#2c3e50', '#7f8c8d', '#bdc3c7'],
-        style: 'portrait'
+        colors: ['#34495e', '#2c3e50', '#7f8c8d', '#bdc3c7', '#530d0dff'],
+        style: 'impressionist'
     },
     {
         id: 12, title: 'Twelve', artist: 'Léa Fontaine', year: '2019',
         description: 'A solitary figure against the vast unknown — a search for meaning in the modern age.',
         width: 1.8, height: 2.5,
-        colors: ['#34495e', '#2c3e50', '#7f8c8d', '#bdc3c7'],
-        style: 'portrait'
+        colors: ['#8eb344ff', '#2c3e50', '#7f8c8d', '#bdc3c7'],
+        style: 'geometric'
     },
     {
         id: 13, title: 'Thirteen', artist: 'Léa Fontaine', year: '2019',
         description: 'A solitary figure against the vast unknown — a search for meaning in the modern age.',
         width: 1.8, height: 2.5,
-        colors: ['#34495e', '#2c3e50', '#7f8c8d', '#bdc3c7'],
-        style: 'portrait'
+        colors: ['#5494d4ff', '#4a2c50ff', '#7f8c8d', '#bdc3c7'],
+        style: 'geometric'
     },
     {
         id: 14, title: 'Fourteen', artist: 'Léa Fontaine', year: '2019',
         description: 'A solitary figure against the vast unknown — a search for meaning in the modern age.',
         width: 1.8, height: 2.5,
-        colors: ['#34495e', '#2c3e50', '#7f8c8d', '#bdc3c7'],
-        style: 'portrait'
+        colors: ['#34495e', '#e67423ff', '#7f8c8d', '#bdc3c7'],
+        style: 'landscape'
     },
     {
         id: 15, title: 'Fifteen', artist: 'Léa Fontaine', year: '2019',
         description: 'A solitary figure against the vast unknown — a search for meaning in the modern age.',
         width: 1.8, height: 2.5,
-        colors: ['#34495e', '#2c3e50', '#7f8c8d', '#bdc3c7'],
-        style: 'portrait'
+        colors: ['#34495e', '#0b7259ff', '#7f8c8d', '#bdc3c7'],
+        style: 'impressionist'
     },
     {
         id: 16, title: 'Sixteen', artist: 'Léa Fontaine', year: '2019',
         description: 'A solitary figure against the vast unknown — a search for meaning in the modern age.',
         width: 1.8, height: 2.5,
-        colors: ['#34495e', '#2c3e50', '#7f8c8d', '#bdc3c7'],
-        style: 'portrait'
+        colors: ['#34495e', '#2c3e50', '#8bbd17ff', '#bdc3c7'],
+        style: 'abstract'
     },
     {
         id: 17, title: 'Seventeen', artist: 'Léa Fontaine', year: '2019',
         description: 'A solitary figure against the vast unknown — a search for meaning in the modern age.',
         width: 1.8, height: 2.5,
-        colors: ['#34495e', '#2c3e50', '#7f8c8d', '#bdc3c7'],
-        style: 'portrait'
+        colors: ['#e4e585ff', '#2c3e50', '#7f8c8d', '#bdc3c7'],
+        style: 'geometric'
     },
     {
         id: 18, title: 'Eighteen', artist: 'Léa Fontaine', year: '2019',
         description: 'A solitary figure against the vast unknown — a search for meaning in the modern age.',
         width: 1.8, height: 2.5,
-        colors: ['#34495e', '#2c3e50', '#7f8c8d', '#bdc3c7'],
-        style: 'portrait'
+        colors: ['#9b2f9fff', '#a422a2ff', '#c42cd5ff', '#c766b7ff'],
+        style: 'landscape'
     },
 ]
 
@@ -1405,13 +1405,13 @@ export default function ArtGallery() {
 
         // 1s - initial move to maximum distance
         const t1 = setTimeout(() => setZoomDistance(4.8), 1000);
-        
+
         // 6s (30%) - closer inspection
         const t2 = setTimeout(() => setZoomDistance(2.0), 6000);
-        
+
         // 12s (60%) - intimate inspection
         const t3 = setTimeout(() => setZoomDistance(1.8), 12000);
-        
+
         // 16s (80%) - pull back slightly before switching
         const t4 = setTimeout(() => setZoomDistance(2.5), 16000);
 
