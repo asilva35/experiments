@@ -1472,19 +1472,23 @@ export default function ArtGallery() {
                 </Suspense>
             </Canvas>
 
-            <MusicPlayer
-                focusedArtwork={focusedArtwork}
-                isPlaying={isPlayingMusic}
-                onTogglePlay={() => setIsPlayingMusic(p => !p)}
-            />
-            <HUD
-                focusedArtwork={focusedArtwork}
-                locatedArtworks={locatedArtworks}
-                onFocus={(a) => { setIsTouring(false); handleFocus(a); }}
-                showTutorial={showTutorial}
-                isTouring={isTouring}
-                onToggleTour={toggleTour}
-            />
+            {isExploring && (
+                <MusicPlayer
+                    focusedArtwork={focusedArtwork}
+                    isPlaying={isPlayingMusic}
+                    onTogglePlay={() => setIsPlayingMusic(p => !p)}
+                />
+            )}
+            {isExploring && (
+                <HUD
+                    focusedArtwork={focusedArtwork}
+                    locatedArtworks={locatedArtworks}
+                    onFocus={(a) => { setIsTouring(false); handleFocus(a); }}
+                    showTutorial={showTutorial}
+                    isTouring={isTouring}
+                    onToggleTour={toggleTour}
+                />
+            )}
 
             {focusedArtwork && (
                 <ArtworkPanel

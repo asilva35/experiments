@@ -21,76 +21,74 @@ import RealEstateDashboard from './pages/real-estate-insights/RealEstateDashboar
 import ArtGallery from './pages/art-gallery/ArtGallery'
 import Shaders from './pages/shaders/Shaders'
 
-// Un componente simple para la página de inicio o selección
-const Home = () => (
-  <div className="p-20 text-white font-mono bg-slate-900">
-    <h1 className="text-3xl mb-8 border-b border-slate-800 pb-4">Projects</h1>
-    <nav className="flex flex-col gap-4">
-      <Link to="/stress-materials" className="text-cyan-400 hover:text-cyan-300 transition-colors flex items-center gap-2">
-        <span className="opacity-50">/01</span> Stress Analysis Beam
-      </Link>
-      <Link to="/configurator" className="text-slate-500 hover:text-slate-400 transition-colors flex items-center gap-2">
-        <span className="opacity-50">/02</span> Configurator
-      </Link>
-      <Link to="/metropolis" className="text-slate-500 hover:text-slate-400 transition-colors flex items-center gap-2">
-        <span className="opacity-50">/03</span> Metropolis
-      </Link>
-      <Link to="/glass" className="text-slate-500 hover:text-slate-400 transition-colors flex items-center gap-2">
-        <span className="opacity-50">/04</span> Glass
-      </Link>
-      <Link to="/nutritional-calculator" className="text-slate-500 hover:text-slate-400 transition-colors flex items-center gap-2">
-        <span className="opacity-50">/05</span> Nutritional Calculator
-      </Link>
-      <Link to="/face-configurator" className="text-slate-500 hover:text-slate-400 transition-colors flex items-center gap-2">
-        <span className="opacity-50">/06</span> Face Configurator
-      </Link>
-      <Link to="/floor-planner" className="text-slate-500 hover:text-slate-400 transition-colors flex items-center gap-2">
-        <span className="opacity-50">/07</span> Floor Planner
-      </Link>
-      <Link to="/solar-map" className="text-slate-500 hover:text-slate-400 transition-colors flex items-center gap-2">
-        <span className="opacity-50">/08</span> Solar Map
-      </Link>
-      <Link to="/concrete-map-picker" className="text-slate-500 hover:text-slate-400 transition-colors flex items-center gap-2">
-        <span className="opacity-50">/09</span> Concrete Map Picker
-      </Link>
-      <Link to="/math-visualizer" className="text-slate-500 hover:text-slate-400 transition-colors flex items-center gap-2">
-        <span className="opacity-50">/10</span> Math Visualizer
-      </Link>
-      <Link to="/vr-photostudio-tour" className="text-slate-500 hover:text-slate-400 transition-colors flex items-center gap-2">
-        <span className="opacity-50">/11</span> VR Photo Studio Tour
-      </Link>
-      <Link to="/sport-management" className="text-emerald-500 hover:text-emerald-400 transition-colors flex items-center gap-2">
-        <span className="opacity-50">/12</span> Sport Management System
-      </Link>
-      <Link to="/academic" className="text-emerald-500 hover:text-emerald-400 transition-colors flex items-center gap-2">
-        <span className="opacity-50">/13</span> Academic Page
-      </Link>
-      <Link to="/electric-bike" className="text-emerald-500 hover:text-emerald-400 transition-colors flex items-center gap-2">
-        <span className="opacity-50">/14</span> Electric Bike
-      </Link>
-      <Link to="/materials" className="text-emerald-500 hover:text-emerald-400 transition-colors flex items-center gap-2">
-        <span className="opacity-50">/15</span> Materials
-      </Link>
-      <Link to="/matcaplab" className="text-emerald-500 hover:text-emerald-400 transition-colors flex items-center gap-2">
-        <span className="opacity-50">/16</span> Matcap Lab
-      </Link>
-      <Link to="/matcapcomposer" className="text-emerald-500 hover:text-emerald-400 transition-colors flex items-center gap-2">
-        <span className="opacity-50">/17</span> Matcap Composer
-      </Link>
-      <Link to="/smartloader" className="text-emerald-500 hover:text-emerald-400 transition-colors flex items-center gap-2">
-        <span className="opacity-50">/18</span> Smart Loader
-      </Link>
-      <Link to="/real-estate-dashboard" className="text-emerald-500 hover:text-emerald-400 transition-colors flex items-center gap-2">
-        <span className="opacity-50">/19</span> Real Estate Dashboard
-      </Link>
-      <Link to="/art-gallery" className="text-amber-400 hover:text-amber-300 transition-colors flex items-center gap-2">
-        <span className="opacity-50">/20</span> Art Gallery 3D
-      </Link>
-      <Link to="/shaders" className="text-pink-500 hover:text-pink-400 transition-colors flex items-center gap-2">
-        <span className="opacity-50">/21</span> Shaders
-      </Link>
+const PROJECTS = [
+  { id: '01', path: '/stress-materials', name: 'Stress Analysis Beam', color: 'text-cyan-400 group-hover:text-cyan-300' },
+  { id: '02', path: '/configurator', name: 'Configurator', color: 'text-slate-400 group-hover:text-slate-300' },
+  { id: '03', path: '/metropolis', name: 'Metropolis', color: 'text-slate-400 group-hover:text-slate-300' },
+  { id: '04', path: '/glass', name: 'Glass', color: 'text-slate-400 group-hover:text-slate-300' },
+  { id: '05', path: '/nutritional-calculator', name: 'Nutritional Calculator', color: 'text-slate-400 group-hover:text-slate-300' },
+  { id: '06', path: '/face-configurator', name: 'Face Configurator', color: 'text-slate-400 group-hover:text-slate-300' },
+  { id: '07', path: '/floor-planner', name: 'Floor Planner', color: 'text-slate-400 group-hover:text-slate-300' },
+  { id: '08', path: '/solar-map', name: 'Solar Map', color: 'text-slate-400 group-hover:text-slate-300' },
+  { id: '09', path: '/concrete-map-picker', name: 'Concrete Map Picker', color: 'text-slate-400 group-hover:text-slate-300' },
+  { id: '10', path: '/math-visualizer', name: 'Math Visualizer', color: 'text-slate-400 group-hover:text-slate-300' },
+  { id: '11', path: '/vr-photostudio-tour', name: 'VR Photo Studio Tour', color: 'text-slate-400 group-hover:text-slate-300' },
+  { id: '12', path: '/sport-management', name: 'Sport Management System', color: 'text-emerald-400 group-hover:text-emerald-300' },
+  { id: '13', path: '/academic', name: 'Academic Page', color: 'text-emerald-400 group-hover:text-emerald-300' },
+  { id: '14', path: '/electric-bike', name: 'Electric Bike', color: 'text-emerald-400 group-hover:text-emerald-300' },
+  { id: '15', path: '/materials', name: 'Materials', color: 'text-emerald-400 group-hover:text-emerald-300' },
+  { id: '16', path: '/matcaplab', name: 'Matcap Lab', color: 'text-emerald-400 group-hover:text-emerald-300' },
+  { id: '17', path: '/matcapcomposer', name: 'Matcap Composer', color: 'text-emerald-400 group-hover:text-emerald-300' },
+  { id: '18', path: '/smartloader', name: 'Smart Loader', color: 'text-emerald-400 group-hover:text-emerald-300' },
+  { id: '19', path: '/real-estate-dashboard', name: 'Real Estate Dashboard', color: 'text-emerald-400 group-hover:text-emerald-300' },
+  { id: '20', path: '/art-gallery', name: 'Art Gallery 3D', color: 'text-amber-400 group-hover:text-amber-300' },
+  { id: '21', path: '/shaders', name: 'Shaders', color: 'text-pink-400 group-hover:text-pink-300' },
+]
 
-    </nav>
+const Home = () => (
+  <div className="min-h-screen p-8 md:p-16 lg:p-24 text-white font-sans bg-[#0B0F19] selection:bg-cyan-500/30">
+    <div className="max-w-7xl mx-auto">
+      <header className="mb-16">
+        <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
+          Experiments <span className="text-slate-500 font-light">Directory</span>
+        </h1>
+        <p className="text-slate-400 text-lg max-w-2xl">
+          A collection of interactive web experiences, 3D configurators, and architectural prototypes.
+        </p>
+      </header>
+      
+      <nav className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {PROJECTS.map((p) => (
+          <Link 
+            key={p.id} 
+            to={p.path} 
+            className="group relative flex flex-col justify-between p-6 bg-slate-800/30 hover:bg-slate-800/60 border border-slate-700/50 hover:border-slate-600 rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/20 overflow-hidden"
+          >
+            {/* Subtle gradient background on hover */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/0 to-white/0 group-hover:from-white/[0.03] group-hover:to-transparent transition-colors duration-500 pointer-events-none" />
+            
+            <div className="flex justify-between items-start mb-12">
+              <span className="text-xs font-mono text-slate-500 group-hover:text-slate-400 transition-colors">
+                /{p.id}
+              </span>
+              
+              <svg 
+                className={`w-5 h-5 opacity-0 -translate-x-4 translate-y-4 group-hover:opacity-100 group-hover:translate-x-0 group-hover:translate-y-0 transition-all duration-300 ease-out ${p.color.split(' ')[0]}`} 
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
+            </div>
+            
+            <div className={`text-lg font-medium transition-colors ${p.color}`}>
+              {p.name}
+            </div>
+          </Link>
+        ))}
+      </nav>
+    </div>
   </div>
 )
 
