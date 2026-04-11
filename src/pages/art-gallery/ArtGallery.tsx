@@ -540,20 +540,28 @@ function ArtworkFrame({
 
 // ─── FPS Controller ─────────────────────────────────────────────────────────────
 
-function FPSMovement({ cameraMode, controlsRef }: { cameraMode: 'orbit' | 'fps', controlsRef: any }) {
+function FPSMovement({ controlsRef }: { controlsRef: any }) {
     const { camera } = useThree()
     const [movement, setMovement] = useState({ forward: false, backward: false, left: false, right: false })
 
     useEffect(() => {
+        // Force pointer lock state sync in case the document was locked immediately 
+        // prior to this component mounting (e.g. by a synchronous click handler)
+        const syncLockState = () => {
+            if (controlsRef.current && document.pointerLockElement) {
+                controlsRef.current.isLocked = true;
+            }
+        }
+        syncLockState();
+        const t = setTimeout(syncLockState, 25); // Fallback microtick sync
+
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (cameraMode !== 'fps') return;
             if (e.code === 'KeyW' || e.code === 'ArrowUp') setMovement(m => ({ ...m, forward: true }))
             if (e.code === 'KeyS' || e.code === 'ArrowDown') setMovement(m => ({ ...m, backward: true }))
             if (e.code === 'KeyA' || e.code === 'ArrowLeft') setMovement(m => ({ ...m, left: true }))
             if (e.code === 'KeyD' || e.code === 'ArrowRight') setMovement(m => ({ ...m, right: true }))
         }
         const handleKeyUp = (e: KeyboardEvent) => {
-            if (cameraMode !== 'fps') return;
             if (e.code === 'KeyW' || e.code === 'ArrowUp') setMovement(m => ({ ...m, forward: false }))
             if (e.code === 'KeyS' || e.code === 'ArrowDown') setMovement(m => ({ ...m, backward: false }))
             if (e.code === 'KeyA' || e.code === 'ArrowLeft') setMovement(m => ({ ...m, left: false }))
@@ -562,17 +570,14 @@ function FPSMovement({ cameraMode, controlsRef }: { cameraMode: 'orbit' | 'fps',
         window.addEventListener('keydown', handleKeyDown)
         window.addEventListener('keyup', handleKeyUp)
 
-        // Reset movement if mode switches
-        if (cameraMode !== 'fps') setMovement({ forward: false, backward: false, left: false, right: false })
-
         return () => {
+            clearTimeout(t)
             window.removeEventListener('keydown', handleKeyDown)
             window.removeEventListener('keyup', handleKeyUp)
         }
-    }, [cameraMode])
+    }, [controlsRef])
 
     useFrame((_state, delta) => {
-        if (cameraMode !== 'fps') return;
         // Apply smooth but snappy WASD movement
         const speed = 6 * delta
         if (movement.forward) camera.translateZ(-speed)
@@ -907,7 +912,7 @@ function Scene({
                 />
             ))}
 
-            <FPSMovement cameraMode={cameraMode} controlsRef={fpsControlsRef} />
+            {cameraMode === 'fps' && <FPSMovement controlsRef={fpsControlsRef} />}
 
             {cameraMode === 'orbit' && (
                 <OrbitControls
