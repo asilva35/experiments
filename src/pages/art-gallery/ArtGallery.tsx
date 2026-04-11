@@ -561,17 +561,17 @@ function FPSMovement({ cameraMode, controlsRef }: { cameraMode: 'orbit' | 'fps',
         }
         window.addEventListener('keydown', handleKeyDown)
         window.addEventListener('keyup', handleKeyUp)
-        
+
         // Reset movement if mode switches
         if (cameraMode !== 'fps') setMovement({ forward: false, backward: false, left: false, right: false })
-        
+
         return () => {
             window.removeEventListener('keydown', handleKeyDown)
             window.removeEventListener('keyup', handleKeyUp)
         }
     }, [cameraMode])
 
-    useFrame((state, delta) => {
+    useFrame((_state, delta) => {
         if (cameraMode !== 'fps') return;
         // Apply smooth but snappy WASD movement
         const speed = 6 * delta
@@ -579,10 +579,10 @@ function FPSMovement({ cameraMode, controlsRef }: { cameraMode: 'orbit' | 'fps',
         if (movement.backward) camera.translateZ(speed)
         if (movement.left) camera.translateX(-speed)
         if (movement.right) camera.translateX(speed)
-        
+
         // Lock camera to eye level
-        camera.position.y = 1.8 
-        
+        camera.position.y = 1.8
+
         // Simple bounding box to prevent walking outside the room
         if (camera.position.x > 18) camera.position.x = 18
         if (camera.position.x < -18) camera.position.x = -18
@@ -1666,7 +1666,7 @@ export default function ArtGallery() {
                             setCameraMode('orbit');
                             fpsControlsRef.current?.unlock();
                         }
-                        
+
                         if (focusedArtwork) {
                             setFocusedArtwork(null);
                         }
