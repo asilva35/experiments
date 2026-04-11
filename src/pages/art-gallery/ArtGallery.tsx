@@ -12,6 +12,7 @@ import { useControls, folder, Leva } from 'leva'
 import * as THREE from 'three'
 import { WOOD_FLOOR_FRAGMENT_SHADER, WOOD_FLOOR_VERTEX_SHADER } from '../../components/WoodFloorShader'
 import { WALL_FRAGMENT_SHADER, WALL_VERTEX_SHADER } from '../../components/WallShader'
+import { PlayIcon, Square } from 'lucide-react'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -538,7 +539,7 @@ function ArtworkFrame({
 
 // ─── Music Player ─────────────────────────────────────────────────────────────
 
-function MusicPlayer() {
+function MusicPlayer({ focusedArtwork }: { focusedArtwork: Artwork | null }) {
     const [isPlaying, setIsPlaying] = useState(false)
     const audioRef = useRef<HTMLAudioElement | null>(null)
 
@@ -552,6 +553,8 @@ function MusicPlayer() {
         setIsPlaying(!isPlaying)
     }
 
+    //if (focusedArtwork) return null
+
     return (
         <div style={{ position: 'fixed', top: 22, right: 32, zIndex: 110 }}>
             <audio ref={audioRef} loop src="/music/A_Gentle_Return.mp3" />
@@ -563,7 +566,7 @@ function MusicPlayer() {
                     letterSpacing: 2, pointerEvents: 'all',
                     cursor: 'pointer', transition: 'all 0.4s cubic-bezier(0.16,1,0.3,1)',
                 }}>
-                {isPlaying ? 'Music On |' : 'Music Off |'}
+                {isPlaying ? 'Music On' : 'Music Off'} {focusedArtwork ? '' : ' |'}
             </div>
         </div>
     )
@@ -1056,28 +1059,52 @@ function HUD({
     locatedArtworks,
     onFocus,
     showTutorial,
+    isTouring,
+    onToggleTour,
 }: {
     focusedArtwork: Artwork | null
     locatedArtworks: Artwork[]
     onFocus: (a: Artwork | null) => void
     showTutorial: boolean
+    isTouring: boolean
+    onToggleTour: () => void
 }) {
     const [menuOpen, setMenuOpen] = useState(false)
 
-    if (focusedArtwork) return null
-
     return (
         <>
-            {/* Controls hint */}
-            <div style={{
-                position: 'fixed', bottom: 24, right: 24,
-                color: '#5a4a2a', fontSize: 11, fontFamily: 'monospace',
-                lineHeight: 1.9, textAlign: 'right', zIndex: 50, pointerEvents: 'none',
-            }}>
-                Left drag — Orbit &nbsp;|&nbsp; Scroll — Zoom &nbsp;|&nbsp; Right drag — Pan &nbsp;|&nbsp; Click painting — Inspect
-            </div>
+            {!focusedArtwork && (
+                <>
+                    {/* Controls hint */}
+                    <div style={{
+                        position: 'fixed', bottom: 24, right: 24,
+                        color: '#5a4a2a', fontSize: 11, fontFamily: 'monospace',
+                        lineHeight: 1.9, textAlign: 'right', zIndex: 50, pointerEvents: 'none',
+                    }}>
+                        Left drag — Orbit &nbsp;|&nbsp; Scroll — Zoom &nbsp;|&nbsp; Right drag — Pan &nbsp;|&nbsp; Click painting — Inspect
+                    </div>
 
-            {showTutorial && (
+                    {/* Gallery name watermark */}
+                    <div style={{
+                        position: 'fixed', top: 24, left: 32,
+                        color: '#4a3a1a', fontSize: 13, fontFamily: 'Georgia, serif',
+                        letterSpacing: 3, textTransform: 'uppercase', zIndex: 50, pointerEvents: 'none',
+                    }}>
+                        Gallery Lumière
+                    </div>
+
+                    {/* Artwork counter */}
+                    <div style={{
+                        position: 'fixed', top: 24, right: 32,
+                        color: '#4a3a1a', fontSize: 11, fontFamily: 'monospace',
+                        letterSpacing: 2, zIndex: 50, pointerEvents: 'none',
+                    }}>
+                        {ARTWORKS.length} WORKS
+                    </div>
+                </>
+            )}
+
+            {showTutorial && !focusedArtwork && (
                 <div style={{
                     position: 'fixed', top: "50%", left: "50%", transform: "translate(-50%, -50%)",
                     width: 120,
@@ -1089,6 +1116,39 @@ function HUD({
                     <img src="/images/hand.svg" alt="Hand" style={{ width: '100%', height: '100%' }} />
                 </div>
             )}
+
+            {/* Play Tour */}
+            <button
+                id="gallery-play-tour-btn"
+                onClick={onToggleTour}
+                title={isTouring ? 'Stop Tour' : 'Play Tour'}
+                style={{
+                    position: 'fixed', bottom: 24, left: '46%', transform: 'translateX(-50%)',
+                    zIndex: 60, pointerEvents: 'all',
+                    background: isTouring ? 'rgba(201,168,76,0.5)' : 'rgba(201,168,76,0.18)',
+                    border: '1px solid rgba(201,168,76,0.35)',
+                    borderRadius: '14px',
+                    width: 48, height: 48,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 5,
+                    transition: 'all 0.3s cubic-bezier(0.16,1,0.3,1)',
+                    boxShadow: menuOpen
+                        ? '0 0 24px rgba(201,168,76,0.25)'
+                        : '0 4px 20px rgba(0,0,0,0.5)',
+                    color: isTouring ? '#05040a' : '#c9a84c',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = isTouring ? 'rgba(201,168,76,0.6)' : 'rgba(201,168,76,0.22)'; e.currentTarget.style.boxShadow = '0 0 24px rgba(201,168,76,0.3)' }}
+                onMouseLeave={e => {
+                    e.currentTarget.style.background = isTouring ? 'rgba(201,168,76,0.5)' : (menuOpen ? 'rgba(201,168,76,0.18)' : 'rgba(30,22,10,0.72)')
+                    e.currentTarget.style.boxShadow = menuOpen ? '0 0 24px rgba(201,168,76,0.25)' : '0 4px 20px rgba(0,0,0,0.5)'
+                }}
+            >
+                {isTouring ? <Square fill="currentColor" size={20} /> : <PlayIcon fill="currentColor" size={20} />}
+            </button>
 
             {/* Hamburger button */}
             <button
@@ -1177,7 +1237,7 @@ function HUD({
                             <button
                                 key={aw.id}
                                 id={`gallery-artwork-link-${aw.id}`}
-                                onClick={() => { onFocus(aw); setMenuOpen(false) }}
+                                onClick={() => { setIsTouring(false); onFocus(aw); setMenuOpen(false) }}
                                 style={{
                                     background: 'transparent',
                                     border: 'none',
@@ -1223,23 +1283,7 @@ function HUD({
                 </div>
             )}
 
-            {/* Gallery name watermark */}
-            <div style={{
-                position: 'fixed', top: 24, left: 32,
-                color: '#4a3a1a', fontSize: 13, fontFamily: 'Georgia, serif',
-                letterSpacing: 3, textTransform: 'uppercase', zIndex: 50, pointerEvents: 'none',
-            }}>
-                Gallery Lumière
-            </div>
-
-            {/* Artwork counter */}
-            <div style={{
-                position: 'fixed', top: 24, right: 32,
-                color: '#4a3a1a', fontSize: 11, fontFamily: 'monospace',
-                letterSpacing: 2, zIndex: 50, pointerEvents: 'none',
-            }}>
-                {ARTWORKS.length} WORKS
-            </div>
+            {/* Gallery name watermark & Artwork counter moved to early return block */}
         </>
     )
 }
@@ -1252,6 +1296,7 @@ export default function ArtGallery() {
     const [verticalOffset, setVerticalOffset] = useState(0)
     const [isExploring, setIsExploring] = useState(false)
     const [showTutorial, setShowTutorial] = useState(false)
+    const [isTouring, setIsTouring] = useState(false)
 
     //HIDE USE CONTROLS
     const config = useControls({
@@ -1332,6 +1377,36 @@ export default function ArtGallery() {
         setVerticalOffset(0)
     }, [focusedArtwork, locatedArtworks])
 
+    const handleNextManual = useCallback(() => {
+        setIsTouring(false)
+        handleNext()
+    }, [handleNext])
+
+    const handlePrevManual = useCallback(() => {
+        setIsTouring(false)
+        handlePrev()
+    }, [handlePrev])
+
+    const toggleTour = useCallback(() => {
+        setIsTouring(prev => {
+            const nextState = !prev;
+            if (nextState && !focusedArtwork && locatedArtworks.length > 0) {
+                setFocusedArtwork(locatedArtworks[0]);
+            }
+            return nextState;
+        });
+    }, [focusedArtwork, locatedArtworks]);
+
+    useEffect(() => {
+        if (!isTouring) return;
+
+        const timer = setTimeout(() => {
+            handleNext();
+        }, 20000);
+
+        return () => clearTimeout(timer);
+    }, [isTouring, focusedArtwork, handleNext]);
+
     return (
         <div style={{ width: '100vw', height: '100vh', background: '#05040a', overflow: 'hidden', position: 'relative' }}>
             <Leva hidden />
@@ -1349,6 +1424,10 @@ export default function ArtGallery() {
           50% { opacity: 0.6; transform: translate(-50%, -50%) scale(1); }
           100% { opacity: 0; transform: translate(-50%, -60%) scale(1.1); }
         }
+        @keyframes tourProgress {
+          from { width: 0%; }
+          to { width: 100%; }
+        }
         * { box-sizing: border-box; }
         ::-webkit-scrollbar { display: none; }
       `}</style>
@@ -1360,35 +1439,52 @@ export default function ArtGallery() {
             >
                 <Suspense fallback={null}>
                     <Scene
-                        onFocus={handleFocus}
+                        onFocus={(a) => { setIsTouring(false); handleFocus(a); }}
                         config={{ ...config, locatedArtworks, onArtworksLocated: handleArtworksLocated }}
                         focusedArtwork={focusedArtwork}
                         zoomDistance={zoomDistance}
                         verticalOffset={verticalOffset}
                         isExploring={isExploring}
-                        onInteraction={() => setShowTutorial(false)}
+                        onInteraction={() => { setShowTutorial(false); setIsTouring(false); }}
                     />
                 </Suspense>
             </Canvas>
 
-            <MusicPlayer />
+            <MusicPlayer focusedArtwork={focusedArtwork} />
             <HUD
                 focusedArtwork={focusedArtwork}
                 locatedArtworks={locatedArtworks}
-                onFocus={handleFocus}
+                onFocus={(a) => { setIsTouring(false); handleFocus(a); }}
                 showTutorial={showTutorial}
+                isTouring={isTouring}
+                onToggleTour={toggleTour}
             />
 
             {focusedArtwork && (
                 <ArtworkPanel
                     artwork={focusedArtwork}
-                    onClose={() => setFocusedArtwork(null)}
-                    onNext={handleNext}
-                    onPrev={handlePrev}
+                    onClose={() => { setFocusedArtwork(null); setIsTouring(false); }}
+                    onNext={handleNextManual}
+                    onPrev={handlePrevManual}
                     zoomDistance={zoomDistance}
                     onZoomChange={setZoomDistance}
                     verticalOffset={verticalOffset}
                     onVerticalOffsetChange={setVerticalOffset}
+                />
+            )}
+
+            {isTouring && focusedArtwork && (
+                <div
+                    key={`tour-bar-${focusedArtwork.id}`}
+                    style={{
+                        position: 'fixed',
+                        bottom: 0,
+                        left: 0,
+                        height: 4,
+                        background: '#c9a84c',
+                        zIndex: 200,
+                        animation: 'tourProgress 20s linear forwards',
+                    }}
                 />
             )}
 
