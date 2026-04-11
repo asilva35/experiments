@@ -3,16 +3,17 @@ import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import { gsap } from 'gsap'
 import {
     OrbitControls,
+    PointerLockControls,
     Text,
     useTexture,
     useGLTF,
-    //Stats,
+    Stats,
 } from '@react-three/drei'
 import { useControls, folder, Leva } from 'leva'
 import * as THREE from 'three'
 import { WOOD_FLOOR_FRAGMENT_SHADER, WOOD_FLOOR_VERTEX_SHADER } from '../../components/WoodFloorShader'
 import { WALL_FRAGMENT_SHADER, WALL_VERTEX_SHADER } from '../../components/WallShader'
-import { PlayIcon, Square } from 'lucide-react'
+import { PlayIcon, Square, Footprints } from 'lucide-react'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -537,6 +538,54 @@ function ArtworkFrame({
     )
 }
 
+// ─── FPS Controller ─────────────────────────────────────────────────────────────
+
+function FPSMovement() {
+    const { camera } = useThree()
+    const [movement, setMovement] = useState({ forward: false, backward: false, left: false, right: false })
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.code === 'KeyW' || e.code === 'ArrowUp') setMovement(m => ({ ...m, forward: true }))
+            if (e.code === 'KeyS' || e.code === 'ArrowDown') setMovement(m => ({ ...m, backward: true }))
+            if (e.code === 'KeyA' || e.code === 'ArrowLeft') setMovement(m => ({ ...m, left: true }))
+            if (e.code === 'KeyD' || e.code === 'ArrowRight') setMovement(m => ({ ...m, right: true }))
+        }
+        const handleKeyUp = (e: KeyboardEvent) => {
+            if (e.code === 'KeyW' || e.code === 'ArrowUp') setMovement(m => ({ ...m, forward: false }))
+            if (e.code === 'KeyS' || e.code === 'ArrowDown') setMovement(m => ({ ...m, backward: false }))
+            if (e.code === 'KeyA' || e.code === 'ArrowLeft') setMovement(m => ({ ...m, left: false }))
+            if (e.code === 'KeyD' || e.code === 'ArrowRight') setMovement(m => ({ ...m, right: false }))
+        }
+        window.addEventListener('keydown', handleKeyDown)
+        window.addEventListener('keyup', handleKeyUp)
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown)
+            window.removeEventListener('keyup', handleKeyUp)
+        }
+    }, [])
+
+    useFrame((state, delta) => {
+        // Apply smooth but snappy WASD movement
+        const speed = 6 * delta
+        if (movement.forward) camera.translateZ(-speed)
+        if (movement.backward) camera.translateZ(speed)
+        if (movement.left) camera.translateX(-speed)
+        if (movement.right) camera.translateX(speed)
+        
+        // Lock camera to eye level
+        camera.position.y = 1.8 
+        
+        // Simple bounding box to prevent walking outside the room
+        if (camera.position.x > 18) camera.position.x = 18
+        if (camera.position.x < -18) camera.position.x = -18
+        if (camera.position.z > 18) camera.position.z = 18
+        if (camera.position.z < -18) camera.position.z = -18
+    })
+
+    return <PointerLockControls />
+}
+
 // ─── Music Player ─────────────────────────────────────────────────────────────
 
 function MusicPlayer({
@@ -697,6 +746,7 @@ function Scene({
     verticalOffset,
     isExploring,
     onInteraction,
+    cameraMode,
 }: {
     onFocus: (a: Artwork | null) => void
     config: any
@@ -705,6 +755,7 @@ function Scene({
     verticalOffset: number
     isExploring: boolean
     onInteraction: () => void
+    cameraMode: 'orbit' | 'fps'
 }) {
     const { camera } = useThree()
     const controlsRef = useRef<any>(null)
@@ -818,7 +869,7 @@ function Scene({
 
     return (
         <>
-            {/* <Stats /> */}
+            <Stats />
             <color attach="background" args={['#05040a']} />
             <GalleryRoom
                 floorMatcapPath={config.floorMatcap}
@@ -846,19 +897,23 @@ function Scene({
                 />
             ))}
 
-            <OrbitControls
-                ref={controlsRef}
-                enableDamping
-                dampingFactor={0.06}
-                rotateSpeed={0.55}
-                zoomSpeed={0.8}
-                panSpeed={0.6}
-                minDistance={2}
-                maxDistance={16}
-                maxPolarAngle={Math.PI / 2 - 0.05}
-                target={[0, 1.8, -12]}
-                onStart={onInteraction}
-            />
+            {cameraMode === 'fps' ? (
+                <FPSMovement />
+            ) : (
+                <OrbitControls
+                    ref={controlsRef}
+                    enableDamping
+                    dampingFactor={0.06}
+                    rotateSpeed={0.55}
+                    zoomSpeed={0.8}
+                    panSpeed={0.6}
+                    minDistance={2}
+                    maxDistance={16}
+                    maxPolarAngle={Math.PI / 2 - 0.05}
+                    target={[0, 1.8, -12]}
+                    onStart={onInteraction}
+                />
+            )}
         </>
     )
 }
@@ -1060,6 +1115,8 @@ function HUD({
     showTutorial,
     isTouring,
     onToggleTour,
+    cameraMode,
+    onToggleCameraMode,
 }: {
     focusedArtwork: Artwork | null
     locatedArtworks: Artwork[]
@@ -1067,6 +1124,8 @@ function HUD({
     showTutorial: boolean
     isTouring: boolean
     onToggleTour: () => void
+    cameraMode: 'orbit' | 'fps'
+    onToggleCameraMode: () => void
 }) {
     const [menuOpen, setMenuOpen] = useState(false)
 
@@ -1080,7 +1139,10 @@ function HUD({
                         color: '#5a4a2a', fontSize: 11, fontFamily: 'monospace',
                         lineHeight: 1.9, textAlign: 'right', zIndex: 50, pointerEvents: 'none',
                     }}>
-                        Left drag — Orbit &nbsp;|&nbsp; Scroll — Zoom &nbsp;|&nbsp; Right drag — Pan &nbsp;|&nbsp; Click painting — Inspect
+                        {cameraMode === 'fps' 
+                            ? <>W, A, S, D — Move &nbsp;|&nbsp; Mouse — Look &nbsp;|&nbsp; Esc — Show Mouse</>
+                            : <>Left drag — Orbit &nbsp;|&nbsp; Scroll — Zoom &nbsp;|&nbsp; Right drag — Pan</>}
+                         &nbsp;|&nbsp; Click painting — Inspect
                     </div>
 
                     {/* Gallery name watermark */}
@@ -1147,6 +1209,39 @@ function HUD({
                 }}
             >
                 {isTouring ? <Square fill="currentColor" size={20} /> : <PlayIcon fill="currentColor" size={20} />}
+            </button>
+
+            {/* Camera Mode Toggle */}
+            <button
+                id="gallery-camera-mode-btn"
+                onClick={onToggleCameraMode}
+                title={cameraMode === 'fps' ? 'Cambiar a Orbit (Vista libre)' : 'Cambiar a First Person (Caminar)'}
+                style={{
+                    position: 'fixed', bottom: 24, left: '54%', transform: 'translateX(-50%)',
+                    zIndex: 60, pointerEvents: 'all',
+                    background: cameraMode === 'fps' ? 'rgba(201,168,76,0.5)' : 'rgba(201,168,76,0.18)',
+                    border: '1px solid rgba(201,168,76,0.35)',
+                    borderRadius: '14px',
+                    width: 48, height: 48,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 5,
+                    transition: 'all 0.3s cubic-bezier(0.16,1,0.3,1)',
+                    boxShadow: menuOpen
+                        ? '0 0 24px rgba(201,168,76,0.25)'
+                        : '0 4px 20px rgba(0,0,0,0.5)',
+                    color: cameraMode === 'fps' ? '#05040a' : '#c9a84c',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = cameraMode === 'fps' ? 'rgba(201,168,76,0.6)' : 'rgba(201,168,76,0.22)'; e.currentTarget.style.boxShadow = '0 0 24px rgba(201,168,76,0.3)' }}
+                onMouseLeave={e => {
+                    e.currentTarget.style.background = cameraMode === 'fps' ? 'rgba(201,168,76,0.5)' : (menuOpen ? 'rgba(201,168,76,0.18)' : 'rgba(30,22,10,0.72)')
+                    e.currentTarget.style.boxShadow = menuOpen ? '0 0 24px rgba(201,168,76,0.25)' : '0 4px 20px rgba(0,0,0,0.5)'
+                }}
+            >
+                <Footprints size={20} />
             </button>
 
             {/* Hamburger button */}
@@ -1297,6 +1392,7 @@ export default function ArtGallery() {
     const [showTutorial, setShowTutorial] = useState(false)
     const [isTouring, setIsTouring] = useState(false)
     const [isPlayingMusic, setIsPlayingMusic] = useState(false)
+    const [cameraMode, setCameraMode] = useState<'orbit' | 'fps'>('orbit')
 
     //HIDE USE CONTROLS
     const config = useControls({
@@ -1340,6 +1436,9 @@ export default function ArtGallery() {
     }, [])
 
     const handleFocus = useCallback((artwork: Artwork | null) => {
+        setIsTouring(false) // Stop tour on manual focus
+        setCameraMode('orbit') // Reset to orbit when focusing
+
         if (focusedArtwork && artwork && focusedArtwork.id === artwork.id) return
         setFocusedArtwork(artwork)
         setZoomDistance(3.8)
@@ -1392,6 +1491,7 @@ export default function ArtGallery() {
             const nextState = !prev;
             if (nextState) {
                 setIsPlayingMusic(true);
+                setCameraMode('orbit'); // Guided tour requires OrbitControls for GSAP animations
                 if (!focusedArtwork && locatedArtworks.length > 0) {
                     setFocusedArtwork(locatedArtworks[0]);
                 }
@@ -1468,6 +1568,7 @@ export default function ArtGallery() {
                         verticalOffset={verticalOffset}
                         isExploring={isExploring}
                         onInteraction={() => { setShowTutorial(false); setIsTouring(false); }}
+                        cameraMode={cameraMode}
                     />
                 </Suspense>
             </Canvas>
@@ -1487,6 +1588,25 @@ export default function ArtGallery() {
                     showTutorial={showTutorial}
                     isTouring={isTouring}
                     onToggleTour={toggleTour}
+                    cameraMode={cameraMode}
+                    onToggleCameraMode={() => {
+                        setCameraMode(m => {
+                            if (m === 'orbit') {
+                                // Request Pointer Lock immediately on the canvas!
+                                setTimeout(() => {
+                                    document.querySelector('canvas')?.requestPointerLock();
+                                }, 10);
+                                return 'fps';
+                            }
+                            document.exitPointerLock();
+                            return 'orbit';
+                        });
+                        
+                        if (focusedArtwork) {
+                            setFocusedArtwork(null);
+                        }
+                        setIsTouring(false);
+                    }}
                 />
             )}
 
