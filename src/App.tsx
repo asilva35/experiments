@@ -20,6 +20,8 @@ import SmartLoader from './pages/matcaplab/SmartLoader'
 import RealEstateDashboard from './pages/real-estate-insights/RealEstateDashboard'
 import ArtGallery from './pages/art-gallery/ArtGallery'
 import Shaders from './pages/shaders/Shaders'
+import PreCalcShaders from './pages/pre-calc-shaders/PreCalcShaders'
+import NodeEditor from './pages/node-editor/NodeEditor'
 
 const PROJECTS = [
   { id: '01', path: '/stress-materials', name: 'Stress Analysis Beam', color: 'text-cyan-400 group-hover:text-cyan-300' },
@@ -43,6 +45,8 @@ const PROJECTS = [
   { id: '19', path: '/real-estate-dashboard', name: 'Real Estate Dashboard', color: 'text-emerald-400 group-hover:text-emerald-300' },
   { id: '20', path: '/art-gallery', name: 'Art Gallery 3D', color: 'text-amber-400 group-hover:text-amber-300' },
   { id: '21', path: '/shaders', name: 'Shaders', color: 'text-pink-400 group-hover:text-pink-300' },
+  { id: '22', path: '/pre-calc-shaders', name: 'Pre Calc Shaders', color: 'text-pink-400 group-hover:text-pink-300' },
+  { id: '23', path: '/node-editor', name: 'Node Editor', color: 'text-pink-400 group-hover:text-pink-300' },
 ]
 
 const Home = () => (
@@ -56,32 +60,32 @@ const Home = () => (
           A collection of interactive web experiences, 3D configurators, and architectural prototypes.
         </p>
       </header>
-      
+
       <nav className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {PROJECTS.map((p) => (
-          <Link 
-            key={p.id} 
-            to={p.path} 
+          <Link
+            key={p.id}
+            to={p.path}
             className="group relative flex flex-col justify-between p-6 bg-slate-800/30 hover:bg-slate-800/60 border border-slate-700/50 hover:border-slate-600 rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/20 overflow-hidden"
           >
             {/* Subtle gradient background on hover */}
             <div className="absolute inset-0 bg-gradient-to-br from-white/0 to-white/0 group-hover:from-white/[0.03] group-hover:to-transparent transition-colors duration-500 pointer-events-none" />
-            
+
             <div className="flex justify-between items-start mb-12">
               <span className="text-xs font-mono text-slate-500 group-hover:text-slate-400 transition-colors">
                 /{p.id}
               </span>
-              
-              <svg 
-                className={`w-5 h-5 opacity-0 -translate-x-4 translate-y-4 group-hover:opacity-100 group-hover:translate-x-0 group-hover:translate-y-0 transition-all duration-300 ease-out ${p.color.split(' ')[0]}`} 
-                fill="none" 
-                viewBox="0 0 24 24" 
+
+              <svg
+                className={`w-5 h-5 opacity-0 -translate-x-4 translate-y-4 group-hover:opacity-100 group-hover:translate-x-0 group-hover:translate-y-0 transition-all duration-300 ease-out ${p.color.split(' ')[0]}`}
+                fill="none"
+                viewBox="0 0 24 24"
                 stroke="currentColor"
               >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
               </svg>
             </div>
-            
+
             <div className={`text-lg font-medium transition-colors ${p.color}`}>
               {p.name}
             </div>
@@ -118,6 +122,8 @@ export default function App() {
         <Route path="/real-estate-dashboard" element={<RealEstateDashboard />} />
         <Route path="/art-gallery" element={<ArtGallery />} />
         <Route path="/shaders" element={<Shaders />} />
+        <Route path="/pre-calc-shaders" element={<PreCalcShaders />} />
+        <Route path="/node-editor" element={<NodeEditor />} />
       </Routes>
     </BrowserRouter>
   )
