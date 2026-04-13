@@ -1,17 +1,18 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import type { RootState } from '@react-three/fiber';
-import { Stats } from '@react-three/drei';
+import { Stats, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
+import { vertexShader, fragmentShader, calculateCPUData } from './ParticleSphere';
 
 // --------------------------------------------------------
 // 1. TIPOS Y UTILIDADES DE CONVERSIÓN
 // --------------------------------------------------------
 interface BiomorphicMeshProps {
-  textureData: Uint8Array;
-  numVertices: number;
-  numFrames: number;
-  segments: [number, number];
+    textureData: Uint8Array;
+    numVertices: number;
+    numFrames: number;
+    segments: [number, number];
 }
 
 const encodeBase64 = (uint8array: Uint8Array): string => {
@@ -34,67 +35,10 @@ const decodeBase64 = (base64: string): Uint8Array => {
 };
 
 // --------------------------------------------------------
-// 2. SHADERS NATIVOS (GLSL)
-// --------------------------------------------------------
-const vertexShader = `
-  uniform sampler2D uDataTexture;
-  uniform float uTime;
-  uniform float uNumVertices;
-  attribute float aVertexIndex;
-  varying float vNoise;
-
-  void main() {
-    float xCoord = (aVertexIndex + 0.5) / uNumVertices; 
-    float yCoord = mod(uTime * 0.3, 1.0); 
-
-    vec4 texData = texture2D(uDataTexture, vec2(xCoord, yCoord));
-    float noiseVal = (texData.r * 2.0) - 1.0;
-    vNoise = noiseVal;
-    
-    vec3 newPos = position + normal * noiseVal * 0.8;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(newPos, 1.0);
-  }
-`;
-
-const fragmentShader = `
-  uniform vec3 uColor;
-  uniform vec3 uColorD;
-  varying float vNoise;
-
-  void main() {
-    float mixFactor = smoothstep(-0.8, 0.8, vNoise); 
-    vec3 finalColor = mix(uColorD, uColor, mixFactor);
-    gl_FragColor = vec4(finalColor, 1.0);
-  }
-`;
-
-// --------------------------------------------------------
-// 3. CÁLCULO DE CPU
-// --------------------------------------------------------
-const calculateCPUData = (count: number, numFrames: number): Uint8Array => {
-    const data = new Uint8Array(count * numFrames * 4);
-    // Simulación de ruido simple para la CPU
-    for (let f = 0; f < numFrames; f++) {
-        const t = (f / numFrames) * Math.PI * 2;
-        for (let i = 0; i < count; i++) {
-            const angle = (i / count) * Math.PI * 10;
-            const n = Math.sin(angle + t) * Math.cos(angle * 0.5 - t);
-            const mapped = ((n + 1.0) / 2.0) * 255;
-            const idx = (f * count + i) * 4;
-            data[idx] = Math.floor(mapped);
-            data[idx + 1] = Math.floor(mapped * 0.8); // G
-            data[idx + 2] = Math.floor(mapped * 1.2); // B
-            data[idx + 3] = 255;
-        }
-    }
-    return data;
-};
-
-// --------------------------------------------------------
 // 4. COMPONENTE DE LA MALLA
 // --------------------------------------------------------
-function BiomorphicMesh({ textureData, numVertices, numFrames, segments }: BiomorphicMeshProps) {
-    const meshRef = useRef<THREE.Mesh>(null!);
+function BiomorphicMesh({ textureData, numVertices, numFrames }: Omit<BiomorphicMeshProps, 'segments'>) {
+    const meshRef = useRef<THREE.Points>(null!);
     const matRef = useRef<THREE.ShaderMaterial>(null!);
 
     // Pre-calcular índices una vez
@@ -132,27 +76,31 @@ function BiomorphicMesh({ textureData, numVertices, numFrames, segments }: Biomo
         if (matRef.current) {
             matRef.current.uniforms.uTime.value = state.clock.elapsedTime;
         }
-        if (meshRef.current) {
-            meshRef.current.rotation.y += 0.005;
-        }
     });
 
     return (
-        <mesh ref={meshRef} rotation={[Math.PI / 4, 0, 0]}>
-            <torusKnotGeometry args={[2, 0.5, segments[0], segments[1]]}>
+        <points ref={meshRef}>
+            <bufferGeometry>
                 <bufferAttribute
-                   attach="attributes-aVertexIndex"
-                   args={[vertexIndices, 1]}
+                    attach="attributes-position"
+                    args={[new Float32Array(numVertices * 3), 3]}
                 />
-            </torusKnotGeometry>
+                <bufferAttribute
+                    attach="attributes-aVertexIndex"
+                    args={[vertexIndices, 1]}
+                />
+            </bufferGeometry>
             <shaderMaterial
                 ref={matRef}
                 vertexShader={vertexShader}
                 fragmentShader={fragmentShader}
                 uniforms={uniforms}
                 side={THREE.DoubleSide}
+                transparent={true}
+                depthWrite={false}
+                blending={THREE.AdditiveBlending}
             />
-        </mesh>
+        </points>
     );
 }
 
@@ -165,7 +113,7 @@ export default function App() {
     const [isProcessing, setIsProcessing] = useState(false);
 
     const segments: [number, number] = [128, 32];
-    const numVertices = (segments[0] + 1) * (segments[1] + 1); 
+    const numVertices = (segments[0] + 1) * (segments[1] + 1);
     const numFrames = 60;
     const cacheKey = 'biomorphic_v3_data';
 
@@ -190,8 +138,8 @@ export default function App() {
         setIsProcessing(false);
     };
 
-    useEffect(() => { 
-        loadOrCalculate(); 
+    useEffect(() => {
+        loadOrCalculate();
     }, []);
 
     const handleSave = () => {
@@ -248,17 +196,15 @@ export default function App() {
             <Canvas camera={{ position: [0, 0, 8], fov: 45 }}>
                 <Stats />
                 <color attach="background" args={['#050505']} />
-                <ambientLight intensity={0.5} />
-                <pointLight position={[10, 10, 10]} />
 
                 {textureData && (
                     <BiomorphicMesh
                         textureData={textureData}
                         numVertices={numVertices}
                         numFrames={numFrames}
-                        segments={segments}
                     />
                 )}
+                <OrbitControls makeDefault />
             </Canvas>
         </div>
     );

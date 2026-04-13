@@ -19,6 +19,7 @@ import MatcapComposer from './pages/matcaplab/MatcapComposer'
 import SmartLoader from './pages/matcaplab/SmartLoader'
 import RealEstateDashboard from './pages/real-estate-insights/RealEstateDashboard'
 import ArtGallery from './pages/art-gallery/ArtGallery'
+import ArtGalleryV2 from './pages/art-gallery/ArtGalleryV2'
 import Shaders from './pages/shaders/Shaders'
 import PreCalcShaders from './pages/pre-calc-shaders/PreCalcShaders'
 import NodeEditor from './pages/node-editor/NodeEditor'
@@ -44,9 +45,10 @@ const PROJECTS = [
   { id: '18', path: '/smartloader', name: 'Smart Loader', color: 'text-emerald-400 group-hover:text-emerald-300' },
   { id: '19', path: '/real-estate-dashboard', name: 'Real Estate Dashboard', color: 'text-emerald-400 group-hover:text-emerald-300' },
   { id: '20', path: '/art-gallery', name: 'Art Gallery 3D', color: 'text-amber-400 group-hover:text-amber-300' },
-  { id: '21', path: '/shaders', name: 'Shaders', color: 'text-pink-400 group-hover:text-pink-300' },
-  { id: '22', path: '/pre-calc-shaders', name: 'Pre Calc Shaders', color: 'text-pink-400 group-hover:text-pink-300' },
-  { id: '23', path: '/node-editor', name: 'Node Editor', color: 'text-pink-400 group-hover:text-pink-300' },
+  { id: '21', path: '/art-gallery-v2', name: 'Art Gallery 3D V2', color: 'text-amber-400 group-hover:text-amber-300' },
+  { id: '22', path: '/shaders', name: 'Shaders', color: 'text-pink-400 group-hover:text-pink-300' },
+  { id: '23', path: '/pre-calc-shaders', name: 'Pre Calc Shaders', color: 'text-pink-400 group-hover:text-pink-300' },
+  { id: '24', path: '/node-editor', name: 'Node Editor', color: 'text-pink-400 group-hover:text-pink-300' },
 ]
 
 const Home = () => (
@@ -121,6 +123,7 @@ export default function App() {
         <Route path="/smartloader" element={<SmartLoader />} />
         <Route path="/real-estate-dashboard" element={<RealEstateDashboard />} />
         <Route path="/art-gallery" element={<ArtGallery />} />
+        <Route path="/art-gallery-v2" element={<ArtGalleryV2 />} />
         <Route path="/shaders" element={<Shaders />} />
         <Route path="/pre-calc-shaders" element={<PreCalcShaders />} />
         <Route path="/node-editor" element={<NodeEditor />} />
