@@ -23,6 +23,9 @@ import ArtGalleryV2 from './pages/art-gallery/ArtGalleryV2'
 import Shaders from './pages/shaders/Shaders'
 import PreCalcShaders from './pages/pre-calc-shaders/PreCalcShaders'
 import NodeEditor from './pages/node-editor/NodeEditor'
+import WebGLBakeExperience from './pages/webglrendertarget/WebGLBakeExperience'
+import ImageToLines from './pages/image-to-lines/ImageToLines'
+import InteractivePlane from './pages/interactive-plane/InteractivePlane'
 
 const PROJECTS = [
   { id: '01', path: '/stress-materials', name: 'Stress Analysis Beam', color: 'text-cyan-400 group-hover:text-cyan-300' },
@@ -49,6 +52,9 @@ const PROJECTS = [
   { id: '22', path: '/shaders', name: 'Shaders', color: 'text-pink-400 group-hover:text-pink-300' },
   { id: '23', path: '/pre-calc-shaders', name: 'Pre Calc Shaders', color: 'text-pink-400 group-hover:text-pink-300' },
   { id: '24', path: '/node-editor', name: 'Node Editor', color: 'text-pink-400 group-hover:text-pink-300' },
+  { id: '25', path: '/webgl-bake-experience', name: 'WebGL Bake Experience', color: 'text-pink-400 group-hover:text-pink-300' },
+  { id: '26', path: '/image-to-lines', name: 'Image to Lines', color: 'text-pink-400 group-hover:text-pink-300' },
+  { id: '27', path: '/interactive-plane', name: 'Interactive Plane', color: 'text-pink-400 group-hover:text-pink-300' },
 ]
 
 const Home = () => (
@@ -127,6 +133,9 @@ export default function App() {
         <Route path="/shaders" element={<Shaders />} />
         <Route path="/pre-calc-shaders" element={<PreCalcShaders />} />
         <Route path="/node-editor" element={<NodeEditor />} />
+        <Route path="/webgl-bake-experience" element={<WebGLBakeExperience />} />
+        <Route path="/image-to-lines" element={<ImageToLines />} />
+        <Route path="/interactive-plane" element={<InteractivePlane />} />
       </Routes>
     </BrowserRouter>
   )

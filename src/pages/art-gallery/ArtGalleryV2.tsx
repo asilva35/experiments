@@ -540,11 +540,9 @@ function ArtworkFrame({
 // ─── Music Player ─────────────────────────────────────────────────────────────
 
 function MusicPlayer({
-    focusedArtwork,
     isPlaying,
     onTogglePlay
 }: {
-    focusedArtwork: Artwork | null
     isPlaying: boolean
     onTogglePlay: () => void
 }) {
@@ -1543,7 +1541,6 @@ export default function ArtGallery() {
 
             {isExploring && (
                 <MusicPlayer
-                    focusedArtwork={focusedArtwork}
                     isPlaying={isPlayingMusic}
                     onTogglePlay={() => setIsPlayingMusic(p => !p)}
                 />
