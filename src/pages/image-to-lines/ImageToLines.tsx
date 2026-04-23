@@ -3,11 +3,8 @@ import type { ChangeEvent } from 'react';
 import {
     Upload,
     Settings2,
-    Download,
-    Image as ImageIcon,
     RefreshCw,
     Maximize2,
-    X,
     Printer,
     Circle,
     AlignJustify,
